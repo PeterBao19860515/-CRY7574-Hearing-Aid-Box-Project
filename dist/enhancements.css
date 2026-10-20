@@ -1,0 +1,4 @@
+.file-open{display:inline-block;margin-top:8px;color:#147f91;font-size:11px;text-decoration:none}
+.file-open:hover{text-decoration:underline}
+.comment div small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.comment-form select{border:1px solid var(--line);border-radius:8px;padding:9px;background:#fff;color:var(--ink)}

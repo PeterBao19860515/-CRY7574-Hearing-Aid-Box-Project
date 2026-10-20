@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="CRY7574 电声异响产品开发测试项目管理台">
+  <title>CRY7574 Test Hub</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="enhancements.css">
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要内容</a>
+  <aside class="sidebar" aria-label="主导航" data-i18n-aria-label="mainNav">
+    <div class="brand"><span class="brand-mark">C7</span><div><strong>CRY7574</strong><small data-i18n="brandSub">测试项目管理台</small></div></div>
+    <nav id="nav">
+      <button class="nav-item active" data-view="overview"><span>⌂</span><b data-i18n="navOverview">项目总览</b></button>
+      <button class="nav-item" data-view="plans"><span>◫</span><b data-i18n="navPlans">计划跟踪</b><em id="navPlanCount">0</em></button>
+      <button class="nav-item" data-view="data"><span>⌁</span><b data-i18n="navData">测试数据</b></button>
+      <button class="nav-item" data-view="files"><span>◇</span><b data-i18n="navFiles">附件资料</b></button>
+      <button class="nav-item" data-view="steps"><span>✓</span><b data-i18n="navSteps">测试要求</b></button>
+    </nav>
+    <div class="team-card"><small data-i18n="team">项目团队</small><div class="person"><i class="avatar navy">A</i><span><b>Andy</b><small data-i18n="pm">产品经理 · 向项目负责人汇报</small></span></div><div class="person"><i class="avatar cyan">L</i><span><b>Lucas</b><small data-i18n="dev">开发经理</small></span></div><div class="person"><i class="avatar gold">J</i><span><b>Jams</b><small data-i18n="qa">测试经理</small></span></div></div>
+  </aside>
+
+  <div class="shell">
+    <header class="topbar"><button id="menuBtn" class="icon-btn mobile" aria-label="打开菜单" data-i18n-aria-label="openMenu">☰</button><div class="crumb"><span>CRY7574</span><b id="pageTitle">项目总览</b></div><div class="top-actions"><button id="langBtn" class="ghost">EN</button><button id="exportBtn" class="ghost" data-i18n="backup">备份数据</button><button id="resetBtn" class="icon-btn" title="恢复演示数据" aria-label="恢复演示数据" data-i18n-title="restoreDemo" data-i18n-aria-label="restoreDemo">↻</button></div></header>
+
+    <main id="main">
+      <section class="view active" id="overview">
+        <div class="hero"><div><p class="eyebrow">STARKEY · CRY7574</p><h1 data-i18n="heroTitle">电声异响产品开发</h1><p data-i18n="heroText">从计划、测试执行到数据结论的单一事实来源。</p></div><div class="hero-status"><i></i><span data-i18n="inProgress">项目进行中</span><b id="today"></b></div></div>
+        <div class="metric-grid">
+          <article class="metric"><div><small data-i18n="overall">总体进度</small><strong id="metricProgress">0%</strong></div><span class="metric-icon">↗</span><div class="progress"><i id="metricProgressBar"></i></div><p id="metricProgressText"></p></article>
+          <article class="metric"><div><small data-i18n="openTasks">进行中计划</small><strong id="metricOpen">0</strong></div><span class="metric-icon cyan-bg">◫</span><p id="metricDue"></p></article>
+          <article class="metric"><div><small data-i18n="tests">测试记录</small><strong id="metricTests">0</strong></div><span class="metric-icon violet-bg">⌁</span><p id="metricUpdated"></p></article>
+          <article class="metric"><div><small data-i18n="attachments">附件数量</small><strong id="metricFiles">0</strong></div><span class="metric-icon gold-bg">◇</span><p data-i18n="localOnly">仅保存在本机浏览器</p></article>
+        </div>
+        <div class="overview-grid">
+          <article class="panel"><div class="panel-head"><div><h2 data-i18n="progressByOwner">责任人进度</h2><p data-i18n="progressHint">完成计划数 / 总计划数</p></div><button class="text-btn" data-go="plans" data-i18n="viewAll">查看全部</button></div><div id="ownerProgress" class="owner-progress"></div></article>
+          <article class="panel"><div class="panel-head"><div><h2 data-i18n="upcoming">近期节点</h2><p data-i18n="upcomingHint">按截止时间排序</p></div></div><div id="upcomingList" class="compact-list"></div></article>
+        </div>
+        <article class="panel"><div class="panel-head"><div><h2 data-i18n="latestTests">最新测试</h2><p data-i18n="latestTestsHint">最近录入的测试结果</p></div><button class="text-btn" data-go="data" data-i18n="manageData">管理数据</button></div><div id="recentTests" class="test-cards"></div></article>
+      </section>
+
+      <section class="view" id="plans">
+        <div class="page-head"><div><p class="eyebrow" data-i18n="moduleOne">模块 01</p><h1 data-i18n="plansTitle">计划跟踪</h1><p data-i18n="plansDesc">管理责任人、截止时间与交付状态。</p></div><button class="primary" id="addPlanBtn">＋ <span data-i18n="newPlan">新建计划</span></button></div>
+        <div class="toolbar"><div class="search"><span>⌕</span><input id="planSearch" data-i18n-placeholder="searchPlan" placeholder="搜索计划"></div><select id="planOwnerFilter" aria-label="筛选责任人" data-i18n-aria-label="filterOwner"><option value="" data-i18n="allOwners">全部责任人</option><option>Andy</option><option>Lucas</option><option>Jams</option></select><select id="planStatusFilter" aria-label="筛选状态" data-i18n-aria-label="filterStatus"><option value="" data-i18n="allStatuses">全部状态</option><option value="todo" data-i18n="todo">未开始</option><option value="doing" data-i18n="doing">进行中</option><option value="done" data-i18n="done">已完成</option></select></div>
+        <div class="board" id="planBoard"></div>
+      </section>
+
+      <section class="view" id="data">
+        <div class="page-head"><div><p class="eyebrow" data-i18n="moduleTwo">模块 02</p><h1 data-i18n="dataTitle">测试数据管理</h1><p data-i18n="dataDesc">集中记录、可视化并导出每次测试数据。</p></div><button class="primary" id="addTestBtn">＋ <span data-i18n="newTest">录入测试</span></button></div>
+        <div class="data-layout"><aside class="test-list-panel"><div class="search"><span>⌕</span><input id="testSearch" data-i18n-placeholder="searchTest" placeholder="搜索测试"></div><div id="testList" class="test-list"></div></aside><div id="testDetail" class="panel detail-panel"></div></div>
+      </section>
+
+      <section class="view" id="files">
+        <div class="page-head"><div><p class="eyebrow" data-i18n="moduleThree">模块 03</p><h1 data-i18n="filesTitle">附件与图片</h1><p data-i18n="filesDesc">保存测试照片、报告和参考资料。</p></div></div>
+        <label class="dropzone" id="dropzone"><input type="file" id="fileInput" multiple accept="image/*,.pdf,.csv,.txt,.html"><span class="upload-icon">⇧</span><strong data-i18n="dropTitle">拖放文件到这里，或点击选择</strong><small data-i18n="dropHint">图片、PDF、CSV、TXT、HTML · 单个文件建议小于 2 MB</small></label>
+        <div class="file-toolbar"><h2 data-i18n="fileLibrary">资料库</h2><span id="storageHint"></span></div><div id="fileGrid" class="file-grid"></div>
+      </section>
+
+      <section class="view" id="steps">
+        <div class="page-head"><div><p class="eyebrow" data-i18n="moduleFour">模块 04</p><h1 data-i18n="stepsTitle">测试要求与步骤</h1><p data-i18n="stepsDesc">标准化执行流程，保证数据可追溯、结果可复现。</p></div><button class="ghost" id="resetStepsBtn" data-i18n="resetChecks">重置勾选</button></div>
+        <div class="requirements"><aside id="stepNav" class="step-nav"></aside><div id="stepContent" class="step-content"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="planDialog"><form method="dialog" id="planForm"><div class="dialog-head"><div><small data-i18n="planRecord">计划记录</small><h2 id="planDialogTitle" data-i18n="newPlan">新建计划</h2></div><button class="icon-btn" value="cancel" aria-label="关闭" data-i18n-aria-label="close">×</button></div><input type="hidden" name="id"><label><span data-i18n="planName">计划名称</span><input name="title" required maxlength="80"></label><div class="form-grid"><label><span data-i18n="owner">责任人</span><select name="owner" required><option>Andy</option><option>Lucas</option><option>Jams</option></select></label><label><span data-i18n="due">截止时间</span><input type="date" name="due" required></label></div><label><span data-i18n="status">状态</span><select name="status"><option value="todo" data-i18n="todo">未开始</option><option value="doing" data-i18n="doing">进行中</option><option value="done" data-i18n="done">已完成</option></select></label><label><span data-i18n="description">说明</span><textarea name="description" rows="3" maxlength="300"></textarea></label><div class="dialog-actions"><button value="cancel" class="ghost" data-i18n="cancel">取消</button><button type="submit" value="default" class="primary" data-i18n="save">保存</button></div></form></dialog>
+
+  <dialog id="testDialog"><form method="dialog" id="testForm"><div class="dialog-head"><div><small data-i18n="testRecord">测试记录</small><h2 data-i18n="newTest">录入测试</h2></div><button class="icon-btn" value="cancel" aria-label="关闭" data-i18n-aria-label="close">×</button></div><div class="form-grid"><label><span data-i18n="testName">测试名称</span><input name="name" required></label><label><span data-i18n="tester">测试人</span><select name="owner"><option>Jams</option><option>Lucas</option><option>Andy</option></select></label><label><span data-i18n="date">日期</span><input name="date" type="date" required></label><label><span data-i18n="result">结论</span><select name="result"><option value="pass" data-i18n="pass">通过</option><option value="review" data-i18n="review">待复核</option><option value="fail" data-i18n="fail">不通过</option></select></label></div><label><span data-i18n="csvData">CSV 数据（frequency,value）</span><textarea name="csv" rows="7" placeholder="frequency,value&#10;100,68.2&#10;200,72.5" required></textarea></label><label><span data-i18n="notes">备注</span><textarea name="notes" rows="3"></textarea></label><div class="dialog-actions"><button value="cancel" class="ghost" data-i18n="cancel">取消</button><button type="submit" class="primary" data-i18n="save">保存</button></div></form></dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
