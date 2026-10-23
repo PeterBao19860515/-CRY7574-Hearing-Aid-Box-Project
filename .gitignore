@@ -24,3 +24,6 @@ CRY7574-backup-*.json
 docs/*.json
 node_modules/
 *.log
+
+# Browser bridge pairing secrets; never publish or include in measurement backups.
+mcp/.local/

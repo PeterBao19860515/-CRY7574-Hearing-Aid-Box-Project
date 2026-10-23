@@ -1,0 +1,5 @@
+#!/bin/sh
+# Verify the committed release; never create surprise commits or stage private files.
+set -eu
+project_root=$(git rev-parse --show-toplevel)
+exec python3 "$project_root/scripts/release.py" pre-push

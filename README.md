@@ -2,6 +2,8 @@
 
 The primary program is a **single offline HTML file** with an English interface. Download [the standalone HTML](<dist/CRY7574 Hearing Aid Box Measurement Manage Software.html>) and open the downloaded file directly in a current Chrome or Edge browser. No Python, server, installation, account or network connection is required.
 
+Optional **Codex MCP control** uses a local Node.js bridge and the browser's **More tools → Codex MCP** connection panel. It operates the explicitly connected workspace and reuses existing data, metadata editing, Schedule and guarded deletion. See [MCP setup and tool reference](mcp/README.md). The normal standalone workflow still works without the bridge. To use MCP on another machine, copy the `mcp/` source folder and its parent `VERSION` file as well as the standalone HTML, install Node.js 20+, and register the server there; do not share the local pairing file.
+
 ## Build and data privacy
 
 The GitHub distribution starts with an empty workspace and one Measurements Library. It contains no bundled measurement files, photos, videos, thresholds or project-progress claims. A private reference-seeded HTML may exist at the repository root on the original developer's computer; that file and `portable/seed.json` are excluded from Git. Opening a new build preserves any existing workspace in the same browser; an empty bundle does not clear browser data.
@@ -19,6 +21,8 @@ The pre-existing root `index.html`, `box-220mm*.html` and earlier `dist/index.ht
 ## Open the current program
 
 Double-click the HTML file. **Data workspace** lists saved records across Libraries. Use **Import files** to preview and explicitly save native Audio Precision XLSX, normalized XLSX/CSV or JSON files into a chosen Library. Filter by Library, tags, dates or units; select records and use **Plot selected** for compatible-unit comparisons. **Select matching (N)** includes all filtered pages, while the header checkbox selects the current page.
+
+**Schedule**, immediately after **Plot view** in the main navigation, is the independent task workspace. Search and filter task cards, review owners, dates, notes and completion bars, and use Edit/Delete with the existing revision/password guards. Cards show at most 50 matching tasks per page; the optional table and Gantt use that same page. The earlier **More tools → Project progress** entry routes to Schedule and uses the same saved tasks and complete backups. No assignees or dates are inferred.
 
 The header's **Decimal places** setting controls display only, with Auto or 0–9 places. The four X/Y range fields follow this setting while resting, and expose their exact value on focus. Original values and mathematical axis bounds remain full precision; Apply on an unchanged field uses the retained exact value. **Export selected** produces importable normalized JSON or analysis CSV; **Export plot PNG** saves the comparison with its legend. Tags, annotations, hiding, guarded deletion, original source downloads, frozen reports and project progress remain available. These current workspace/decimal/export features belong to the standalone program; the older server interface below does not provide the same feature set.
 
@@ -169,3 +173,17 @@ Task statuses are `Planned`, `In progress`, `Blocked`, `Complete`. Timestamps ar
 ### Verification
 
 Run the independent tests in `tests/` using the instructions in `docs/test-report.md`. They use temporary databases, not your working project data.
+
+## Release versions
+
+Before every authorized release push:
+
+```sh
+git fetch origin
+python3 scripts/release.py prepare
+python3 scripts/release.py check
+```
+
+Review and stage the intended source, documentation, `VERSION`, `release-manifest.json` and empty distribution; run relevant checks, commit, then push. Preparation derives the next patch from the fetched upstream, so a retry against the same remote version does not increment twice. The manifest checks code inputs and the distribution hash. Install the tracked pre-push guard once with `git config --local core.hooksPath .githooks` (preserve any existing custom hook setup). It checks the committed snapshot against the remote branch head and rejects a missing increment or stale build. GitHub API/connector publication must run `python3 scripts/release.py check --base <remote-head> --commit <candidate-commit>` before updating the remote ref, since API calls do not run Git hooks. Do not bypass the guard to publish an unversioned change.
+
+The first formal product release is **V1.0.1**. `VERSION` holds the shared numeric `major.minor.patch`; the standalone builder validates it and embeds it in the visible header/footer and `app-version` metadata. Building does not increment it. Each subsequent authorized release push increments the patch (V1.0.2, V1.0.3, …) through the release workflow, rebuilds the empty distribution and preserves private data exclusions. Product version changes do not change the workspace/backup schema or stored measurements. MCP summaries report the actual open browser page version separately from the local server version; reopen the updated HTML to use the new frontend.

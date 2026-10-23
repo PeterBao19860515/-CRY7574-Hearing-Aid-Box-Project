@@ -10,6 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 NAME = 'CRY7574 Hearing Aid Box Measurement Manage Software.html'
 
 
+def product_version():
+    """Product releases use numeric major.minor.patch, independently of data schema."""
+    value = (ROOT / 'VERSION').read_text(encoding='utf-8').strip()
+    if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', value):
+        raise ValueError('VERSION must contain a strict numeric SemVer release, for example 1.0.1')
+    return value
+
+
 def empty_workspace():
     """A public release starts with one destination library and no user records."""
     return {
@@ -39,6 +47,7 @@ def main():
     parser.add_argument('--empty', action='store_true', help='Build without any private seed or bundled measurements.')
     parser.add_argument('--output', type=Path, help='Output HTML path (default: project-root software HTML).')
     args = parser.parse_args()
+    version = product_version()
     seed_path = ROOT / 'portable/seed.json'
     if args.empty or not seed_path.is_file():
         seed = empty_workspace()
@@ -48,18 +57,19 @@ def main():
         mode = 'private seed snapshot'
     seed_json = json.dumps(seed, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c').replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
     html = (ROOT / 'portable/workspace.html').read_text(encoding='utf-8')
+    html = html.replace('__APP_VERSION__', version)
     logo = (ROOT / 'portable/assets/crysound-logo.png').read_bytes()
     html = html.replace('__CRYSOUND_LOGO__', 'data:image/png;base64,' + base64.b64encode(logo).decode('ascii'))
     html = html.replace('<!--WORKSPACE_STYLE-->', '<style>' + (ROOT / 'portable/workspace.css').read_text(encoding='utf-8') + '</style>')
     scripts = '<script type="application/json" id="portable-seed">' + seed_json + '</script>'
-    for name in ['display.js', 'appearance.js', 'limits.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'workspace.js']:
+    for name in ['display.js', 'appearance.js', 'limits.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'workspace.js', 'mcp-bridge.js']:
         scripts += '<script>' + inline((ROOT / 'portable' / name).read_text(encoding='utf-8')) + '</script>'
     html = html.replace('<!--WORKSPACE_SCRIPTS-->', scripts)
     output = args.output.expanduser() if args.output else ROOT / NAME
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(html, encoding='utf-8')
     print(output.resolve())
-    print(f'{output.stat().st_size:,} bytes; {mode}; standalone offline workspace')
+    print(f'{output.stat().st_size:,} bytes; V{version}; {mode}; standalone offline workspace')
 
 
 if __name__ == '__main__':

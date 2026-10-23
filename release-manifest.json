@@ -1,0 +1,38 @@
+{
+  "distribution": {
+    "path": "dist/CRY7574 Hearing Aid Box Measurement Manage Software.html",
+    "sha256": "4c8d1ab7136e7239a8aef6040ccc6359f0294e3570eaf94527625b5cf14fb758"
+  },
+  "inputs": {
+    "VERSION": "44e161e4495cac2cf7858043e9e6418e9579f0ddcfae826f9a372622968ce066",
+    "mcp/server.mjs": "f45440b568954bff621fd12bee96d62fd3f2a0abf2926813ac6110226195727c",
+    "mcp/tools.mjs": "ad1d3fd3f5447a72395d0f0b55e982581fcad60e1e188328017d116c37bc9fe3",
+    "portable/appearance.js": "b6308a425a7491b80f1df1d2770adc75cd3d52f55248d71e16c44f19754ec6b0",
+    "portable/assets/crysound-logo.png": "1d5f95040cd1ac6ae2a8c0c4e88a550f756a8eb36abcff473ec994afe5f316d3",
+    "portable/axis-inputs.js": "bd0f039046fab0a2018728c9e8ca21aa14581e2ae4bce80e8a78b138f60e52f4",
+    "portable/axis-ticks.js": "da6dac2baa9c99395bf3c11a3a58c8e2a9d275ad7f9ac12624ec08c698096564",
+    "portable/build_portable.py": "b809373d655e0995d1fbba87235d3a69b0ea6813a3e22c944b3753b794bbee68",
+    "portable/comparisons.js": "e2aa7d29f9803723f4143c4fe5671592a8d4dc794e1c0932743b867da404dbf4",
+    "portable/display.js": "4173e97b4d350ae221d902827520b35b9b56f02a911692f72bb2b2e9e41a6a19",
+    "portable/environment-media.js": "60ed4f59ba2a340d710982cb7d77b21254af16dea683892d4248882861111368",
+    "portable/library-first.css": "9e1a75d78435e71fa20239cbf0bc19421e2756d9bd37b6abd99fc927988de75f",
+    "portable/library-first.html": "e13de9eb364d6a8c551f62c6f68eaaaab7456288e3168d39d78e49ea1c9cd0f5",
+    "portable/library-first.js": "46bc086b774253208201c7f0d102fc7ea5c6fe60edf14033fc37a646a283f287",
+    "portable/limits.js": "f34c2a2ecf3edcd3fcf754ac4ff28a8902f468911b1c733e6ffa9a96e851ed5f",
+    "portable/mcp-bridge.js": "42b6a5a35eed0c8b158b0969e76dce91f3ff9f4004b1881f1edb2ed2621438f7",
+    "portable/organization.css": "0dd2a94f119a041d809bf8bf08ffaaf8915e5f31612323c8002870fff5cbefcc",
+    "portable/organization.html": "72e5bbed319c5517035a450ab637daf4bc3df87057f983e865005aa476bb627e",
+    "portable/organization.js": "7f9b845142269f6059285df3acb21718f833999888a08475eadd974d5e537be6",
+    "portable/plot.js": "efc5195f491f4b8b0c70f668f73d287f36c7d35f3d4c8db76060d4b6dd57483e",
+    "portable/runtime.js": "61c9ce29b1c9aa2da9be4d1efbc24ecd993971317d41d30a9d2ec9b18818cc0d",
+    "portable/specifications.js": "0202bc8c3e0cf2518c3a12c6fdbc04d95c3fd6731162e33f24b316974b5911d0",
+    "portable/workspace-exports.js": "c23699ff065eea91693ad1a9ad7b05a1d4f9e7356e04c9b4b085c21f6b06eba0",
+    "portable/workspace-tools.js": "71ca25b94a3213b4e93b502d644fc6fc4c81f18e33c467752c966802555b401a",
+    "portable/workspace.css": "bbd1dfaf7cfd46e71c4b812f45e7350e33c0f49dea9918373aa782da86b537af",
+    "portable/workspace.html": "eb5abf797da147f588693303dc986eba289b98364aec8d561407e36edc26395c",
+    "portable/workspace.js": "00258e64ecb1f6136f11204be835c231b4eeea37d077dcf1e7e7ed069882e1cd",
+    "portable/zoom.css": "005439b7f5fcfb595a8e72ae2465ee363e32fe3cdfc4bceb03c1e2ccbc9095f1",
+    "portable/zoom.js": "80b6ca7c858dee822459c900dd25fe96af165291f0d46355a0935d099dce92ee"
+  },
+  "version": "1.0.1"
+}
