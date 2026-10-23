@@ -1,0 +1,15 @@
+/* Display strings and exact mathematical ranges have separate, per-field state. */
+(function(){'use strict';
+class AxisRangeInputs{
+constructor(ids={x:['plotXAxisMin','plotXAxisMax'],y:['plotYAxisMin','plotYAxisMax']}){this.fields=[];for(const axis of ['x','y'])for(const id of ids[axis]){const element=document.getElementById(id),field={id,axis,element,exact:undefined,dirty:false,focused:false};this.fields.push(field);element.setAttribute('aria-describedby','axisInputHint');element.addEventListener('focus',()=>{field.focused=true;this.render(field);});element.addEventListener('blur',()=>{field.focused=false;this.render(field);});element.addEventListener('input',()=>{field.dirty=true;this.annotate(field);});this.annotate(field);}}
+annotate(field){const element=field.element,available=Number.isFinite(field.exact),exact=available?String(Object.is(field.exact,-0)?0:field.exact):'Not available',places=MeasurementDisplay.getDecimalPlaces(),display=available?MeasurementDisplay.format(field.exact):'';element.dataset.dirty=String(field.dirty);if(available)element.dataset.exactRange=exact;else delete element.dataset.exactRange;element.dataset.rounded=String(available&&places!=='auto'&&Number(display)!==field.exact);element.title='Exact range: '+exact+'. '+(field.dirty?'Unsaved edit. Choose Apply '+field.axis.toUpperCase()+' to use this draft.':places==='auto'?'Original precision is displayed.':'Display uses '+places+' decimal places; rounding does not change the exact range. Focus to edit the exact value.');}
+render(field){if(!field.dirty){const value=Number.isFinite(field.exact)?field.focused?String(Object.is(field.exact,-0)?0:field.exact):MeasurementDisplay.format(field.exact):'';if(field.element.value!==value)field.element.value=value;}this.annotate(field);}
+sync(bounds){for(const axis of ['x','y']){const values=bounds[axis];if(!values)continue;this.fields.filter(field=>field.axis===axis).forEach((field,index)=>{if(!Number.isFinite(values[index]))throw Error('Exact axis range is not finite');field.exact=values[index];this.render(field);});}}
+resetAxes(axes){for(const field of this.fields)if(axes.includes(field.axis))field.dirty=false;}
+refreshFormat(){for(const field of this.fields)this.render(field);}
+clear(){for(const field of this.fields){field.exact=undefined;field.dirty=false;this.render(field);}}
+getValues(axis){if(!['x','y'].includes(axis))throw Error('Choose the X or Y axis');return this.fields.filter(field=>field.axis===axis).map(field=>{if(!Number.isFinite(field.exact))throw Error('Plot measurements before applying an axis range');if(!field.dirty)return field.exact;const draft=field.element.value.trim();if(!draft)throw Error('Enter both axis limits');const value=Number(draft);if(!Number.isFinite(value))throw Error('Axis limits must be finite numbers');return value;});}
+getState(){return this.fields.map(({id,axis,exact,dirty,focused,element})=>({id,axis,exact,dirty,focused,value:element.value}));}
+}
+window.AxisRangeInputs=AxisRangeInputs;
+})();

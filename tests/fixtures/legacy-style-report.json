@@ -1,0 +1,74 @@
+{
+  "report": {
+    "id": "legacy-style-report",
+    "title": "Legacy report without style settings",
+    "notes": "Frozen <notes>",
+    "createdAt": "2026-10-22T12:00:00Z",
+    "chartId": "legacy-style-chart",
+    "chart": {
+      "id": "legacy-style-chart",
+      "sourceId": "legacy-style-source",
+      "title": "Legacy measurement",
+      "unit": "dB SPL",
+      "kind": "imported",
+      "label": "User import — unvalidated; device identity and calibration not verified",
+      "testDate": "",
+      "testItem": "",
+      "notes": "Original unchanged metadata",
+      "series": [
+        {
+          "name": "Same channel",
+          "values": [
+            [
+              100,
+              0
+            ],
+            [
+              200,
+              1
+            ],
+            [
+              300,
+              null
+            ],
+            [
+              400,
+              2
+            ],
+            [
+              500,
+              3
+            ]
+          ]
+        },
+        {
+          "name": "Other channel",
+          "values": [
+            [
+              100,
+              2
+            ],
+            [
+              200,
+              3
+            ],
+            [
+              300,
+              4
+            ]
+          ]
+        }
+      ],
+      "xmin": 100,
+      "xmax": 500,
+      "ymin": 0,
+      "ymax": 4
+    },
+    "source": {
+      "id": "legacy-style-source",
+      "name": "Legacy source.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "html": "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\"><title>Legacy report without style settings</title><style>body{font:16px system-ui;color:#29223b;max-width:1050px;margin:40px auto;padding:24px}h1{color:#7044dc}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px;border-bottom:1px solid #ddd}pre{white-space:pre-wrap;overflow-wrap:anywhere}.notice{padding:16px;background:#f4effb}svg{width:100%;background:#faf8fd}h2{margin-top:32px}@media print{body{margin:0}}</style><h3>CRY7574 Hearing Aid Box Measurement Manage Software</h3><h1>Legacy report without style settings</h1><p class=\"notice\">User import — unvalidated; device identity and calibration not verified</p><p>Report ID: legacy-style-report<br>Created: 2026-10-22T12:00:00Z</p><h2>Legacy measurement</h2><svg role=\"img\" aria-label=\"Log frequency measurement curves\" viewBox=\"0 0 900 350\"><path d=\"M50 30V300H850\" fill=\"none\" stroke=\"#aaa\"/><polyline fill=\"none\" stroke=\"#7047eb\" stroke-width=\"1.5\" points=\"50.00,300.00 394.54,235.00\"/><polyline fill=\"none\" stroke=\"#7047eb\" stroke-width=\"1.5\" points=\"739.08,170.00 850.00,105.00\"/><polyline fill=\"none\" stroke=\"#00a9b1\" stroke-width=\"1.5\" points=\"50.00,170.00 394.54,105.00 596.08,40.00\"/><text x=\"340\" y=\"335\">Frequency (Hz) · logarithmic 100–500</text><text x=\"55\" y=\"20\">dB SPL 0–4</text></svg><table><tr><th>Series</th><th>Original points</th><th>Missing</th></tr><tr><td><i style=\"display:inline-block;width:16px;height:4px;background:#7047eb\"></i> Same channel</td><td>5</td><td>1</td></tr><tr><td><i style=\"display:inline-block;width:16px;height:4px;background:#00a9b1\"></i> Other channel</td><td>3</td><td>0</td></tr></table><h2>Measurement details</h2><p>Test date: Unknown<br>Test item: Uncategorized</p><pre>Original unchanged metadata</pre><h2>Engineering notes</h2><pre>Frozen &lt;notes&gt;</pre><h2>Traceability</h2><p>Source: Legacy source.json<br>Chart ID: legacy-style-chart</p><pre>SHA-256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</pre><details><summary>Original measurement snapshot (JSON)</summary><pre>{\n  &quot;id&quot;: &quot;legacy-style-chart&quot;,\n  &quot;sourceId&quot;: &quot;legacy-style-source&quot;,\n  &quot;title&quot;: &quot;Legacy measurement&quot;,\n  &quot;unit&quot;: &quot;dB SPL&quot;,\n  &quot;kind&quot;: &quot;imported&quot;,\n  &quot;label&quot;: &quot;User import — unvalidated; device identity and calibration not verified&quot;,\n  &quot;testDate&quot;: &quot;&quot;,\n  &quot;testItem&quot;: &quot;&quot;,\n  &quot;notes&quot;: &quot;Original unchanged metadata&quot;,\n  &quot;series&quot;: [\n    {\n      &quot;name&quot;: &quot;Same channel&quot;,\n      &quot;values&quot;: [\n        [\n          100,\n          0\n        ],\n        [\n          200,\n          1\n        ],\n        [\n          300,\n          null\n        ],\n        [\n          400,\n          2\n        ],\n        [\n          500,\n          3\n        ]\n      ]\n    },\n    {\n      &quot;name&quot;: &quot;Other channel&quot;,\n      &quot;values&quot;: [\n        [\n          100,\n          2\n        ],\n        [\n          200,\n          3\n        ],\n        [\n          300,\n          4\n        ]\n      ]\n    }\n  ],\n  &quot;xmin&quot;: 100,\n  &quot;xmax&quot;: 500,\n  &quot;ymin&quot;: 0,\n  &quot;ymax&quot;: 4\n}</pre></details><h2>Limitations</h2><p>This engineering snapshot is not a CRY7574 compliance or validation certificate. Reference Alpair 5G data does not establish CRY7574 performance. Uploaded measurements have not been verified for identity, calibration or conditions. No approved CRY7574 acceptance limits or automatic pass/fail conclusions are configured. Missing values remain gaps.</p><p>Use the browser Print command to save as PDF.</p></html>"
+}

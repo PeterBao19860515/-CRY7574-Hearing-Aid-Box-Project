@@ -1,0 +1,91 @@
+// Independent batch retry, selection scope and pagination checks in the actual standalone UI.
+import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {chromium} from '/Users/peter/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const url=pathToFileURL(path.join(root,'CRY7574 Hearing Aid Box Measurement Manage Software.html')).href;
+const temp=await mkdtemp(path.join(os.tmpdir(),'cry7574-org-ui-'));
+const checks=[],errors=[],network=[];
+const check=(name,value)=>{assert.ok(value,name);checks.push(name);};
+let browser,page;
+const api=(endpoint,method='GET',body)=>page.evaluate(({endpoint,method,body})=>PortableAPI.request(endpoint,method==='GET'?undefined:{method,body}),{endpoint,method,body});
+const rows=()=>page.locator('#batchFileResults tr');
+async function statuses(){return rows().evaluateAll(elements=>elements.map(row=>({name:row.querySelector('td').childNodes[0].textContent,status:row.querySelectorAll('td')[1].textContent})));}
+async function waitDone(){await page.waitForFunction(()=>{const states=Array.from(document.querySelectorAll('#batchFileResults tr')).map(r=>r.children[1].textContent);return states.length>0&&states.every(s=>!['queued','previewing','saving'].includes(s))&&!document.querySelector('#previewImport').disabled;});}
+async function library(name){await page.locator('#newLibrary').click();await page.locator('#libraryForm [name=name]').fill(name);await page.locator('#libraryForm [type=submit]').click();await page.waitForFunction(()=>!document.querySelector('#libraryDialog').open);return (await api('/api/state')).libraries.find(l=>l.name===name);}
+async function selectIds(){return page.locator('.record-selection').evaluateAll(nodes=>nodes.map(n=>n.dataset.id));}
+try{
+  browser=await chromium.launchPersistentContext(path.join(temp,'profile'),{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,acceptDownloads:true,viewport:{width:1500,height:1000}});
+  await browser.setOffline(true);browser.on('request',r=>{if(/^https?:/i.test(r.url()))network.push(r.url());});
+  page=await browser.newPage();page.on('pageerror',e=>errors.push(String(e)));await page.goto(url+'#data');await page.waitForFunction(()=>window.PortableAPI?.request);await page.evaluate(async()=>{await PortableAPI.ready;});await page.waitForFunction(()=>state?.libraries?.length>=2);
+  const destination=await library('UI Batch <Library>');
+  const target=await library('UI Moved Records');
+  check('Creating a library in the actual form selects an empty custom collection',await page.locator('#libraryFilter').inputValue()===target.id&&await page.locator('#chartEmpty').isVisible());
+  await page.locator('#importButton').click();
+  check('Upload picker supports multiple files',await page.locator('#uploadFile').evaluate(e=>e.multiple));
+  await page.locator('#importLibrary').selectOption(destination.id);await page.locator('#importTags').fill('Batch, bench');
+  const ap=spawnSync('python3',['-c','import sys;sys.path.insert(0,"tests");from test_acceptance import ap_fixture;sys.stdout.buffer.write(ap_fixture())'],{cwd:root});assert.equal(ap.status,0);
+  const csv=Buffer.from('Frequency,Value\n100,0\n200,\n300,1.23456789012345\n');
+  const files=[{name:'A saved.csv',mimeType:'text/csv',buffer:csv},{name:'B transient.csv',mimeType:'text/csv',buffer:csv},{name:'C lost acknowledgment.csv',mimeType:'text/csv',buffer:csv},{name:'D corrupt.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from('not a zip workbook')},{name:'E native AP.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:ap.stdout}];
+  await page.locator('#uploadFile').setInputFiles(files);
+  const before=await api('/api/state');
+  await page.locator('#previewImport').click();await waitDone();
+  let state=await api('/api/state');
+  check('Batch Preview creates no sources, charts or activity',state.sources.length===before.sources.length&&state.charts.length===before.charts.length&&JSON.stringify(state.activity)===JSON.stringify(before.activity));
+  let results=await statuses();
+  check('Preview reports each valid and malformed file independently',results.length===5&&results.filter(r=>r.status==='ready').length===4&&results.find(r=>r.name==='D corrupt.xlsx').status==='invalid');
+  await page.locator('.review-file[data-index="4"]').click();
+  check('Native AP preview retains per-sheet Vrms and skipped Summary', (await page.locator('#importPreview').innerText()).includes('Vrms')&&(await page.locator('#importPreview').innerText()).includes('Summary'));
+  await page.evaluate(()=>{const original=PortableAPI.request;window.qaOriginalRequest=original;let failBefore=true,loseAfter=true;PortableAPI.request=async (endpoint,options)=>{if(endpoint==='/api/import'&&options?.method==='POST'){if(options.body.name==='B transient.csv'&&failBefore){failBefore=false;throw Error('Simulated transient save failure');}const result=await original(endpoint,options);if(options.body.name==='C lost acknowledgment.csv'&&loseAfter){loseAfter=false;throw Error('Simulated response lost after commit');}return result;}return original(endpoint,options);};});
+  await page.locator('#saveImport').click();await waitDone();
+  results=await statuses();state=await api('/api/state');
+  check('Saving continues after per-file failures',results.find(r=>r.name==='A saved.csv').status==='saved'&&results.find(r=>r.name==='E native AP.xlsx').status==='saved'&&results.filter(r=>r.status==='failed').length===2);
+  check('First save contains only committed sources and chart counts',state.sources.length===before.sources.length+3&&state.charts.length===before.charts.length+5);
+  const successfulIds=state.sources.filter(s=>['A saved.csv','C lost acknowledgment.csv','E native AP.xlsx'].includes(s.name)).map(s=>s.id).sort();
+  await page.locator('#retryFailed').click();await waitDone();
+  results=await statuses();state=await api('/api/state');
+  check('Retry Failed saves the transient error and recognizes lost acknowledgment',results.filter(r=>r.status==='saved').length===4&&results.find(r=>r.name==='D corrupt.xlsx').status==='invalid');
+  check('Retry does not duplicate prior successful or already-committed files',state.sources.length===before.sources.length+4&&state.charts.length===before.charts.length+6&&successfulIds.every(id=>state.sources.some(s=>s.id===id))&&state.sources.filter(s=>s.name==='C lost acknowledgment.csv').length===1);
+  const sourceIds=state.sources.filter(s=>files.some(f=>f.name===s.name)).map(s=>s.id);
+  check('Batch common tags and destination apply to every saved measurement',state.charts.filter(c=>sourceIds.includes(c.sourceId)).every(c=>c.libraryId===destination.id&&c.tags.includes('Batch')&&c.tags.includes('bench')));
+  await page.evaluate(()=>{PortableAPI.request=window.qaOriginalRequest;});
+  await page.locator('#importDialog .close').first().click();
+  const scale=await library('UI Scale Collection');
+  const dataset=Array.from({length:123},(_,i)=>({title:'Scale '+String(i).padStart(3,'0'),tags:['Scale',i%2?'Odd':'Even'],series:[{name:'Run',values:[[100,0],[200,i]]}]}));
+  for(let start=0;start<123;start+=100)await api('/api/import','POST',{name:'Scale '+start+'.json',format:'json',libraryId:scale.id,contentBase64:Buffer.from(JSON.stringify({charts:dataset.slice(start,start+100)})).toString('base64')});
+  await page.reload();await page.waitForFunction(()=>state?.libraries?.length>=5);await page.locator('#libraryFilter').selectOption(scale.id);
+  check('Large library list is bounded to 50 DOM records per page',await page.locator('.record-selection').count()===50&&(await page.locator('#listPageInfo').innerText()).includes('3'));
+  await page.locator('#selectPage').click();
+  check('Select Page chooses only its 50 visible records',(await page.locator('#selectedCount').innerText()).startsWith('50 '));
+  await page.locator('#tagFilter').fill('Odd');
+  check('Changing a filter clears prior hidden selections',(await page.locator('#selectedCount').innerText()).startsWith('0 ')&&await page.locator('#bulkEdit').isDisabled());
+  await page.locator('#tagFilter').fill('');await page.locator('#selectPage').click();const firstPage=await selectIds();
+  await page.locator('#listNext').click();
+  check('Paging retains explicit selections without selecting new page implicitly',(await page.locator('#selectedCount').innerText()).startsWith('50 ')&&await page.locator('.record-selection:checked').count()===0);
+  await page.locator('#selectPage').click();const secondPage=await selectIds(),explicit=[...firstPage,...secondPage];
+  await page.locator('#bulkEdit').click();
+  check('Bulk dialog states the explicit 100-record scope',(await page.locator('#bulkScope').innerText()).includes('100'));
+  await page.locator('#bulkLibrary').selectOption(target.id);await page.locator('#bulkTags').fill('Bulk tagged');await page.locator('#bulkTagMode').selectOption('add');await page.locator('#bulkForm [type=submit]').click();await page.waitForFunction(()=>!document.querySelector('#bulkDialog').open);
+  state=await api('/api/state');const scaleCharts=state.charts.filter(c=>c.title.startsWith('Scale '));
+  check('Bulk action changes exactly explicitly selected pages',scaleCharts.filter(c=>explicit.includes(c.id)).every(c=>c.libraryId===target.id&&c.tags.includes('Bulk tagged'))&&scaleCharts.filter(c=>!explicit.includes(c.id)).every(c=>c.libraryId===scale.id&&!c.tags.includes('Bulk tagged')));
+  check('Unselected final page is retained intact',scaleCharts.filter(c=>c.libraryId===scale.id).length===23);
+  await page.locator('#libraryFilter').selectOption(target.id);await page.locator('#tagFilter').fill('bulk TAGGED');
+  check('Library and case-insensitive tag filters combine',(await page.locator('#filterCount').innerText()).startsWith('100 of '));
+  const selected=await selectIds();await page.locator('.record-selection').first().check();
+  const other=await browser.newPage();await other.goto(url);await other.waitForFunction(()=>window.PortableAPI?.request);await other.evaluate(async()=>{await PortableAPI.ready;});
+  await other.evaluate(({id,libraryId})=>PortableAPI.request('/api/charts/'+id,{method:'PATCH',body:{libraryId}}),{id:selected[0],libraryId:scale.id});
+  await page.waitForFunction(()=>document.querySelector('#selectedCount').textContent.startsWith('0 ')&&document.querySelector('#filterCount').textContent.startsWith('99 of '),null,{timeout:9000});
+  check('Live polling drops selected records moved outside the active filter',await page.locator('#bulkEdit').isDisabled()&&await page.locator('.record-selection[data-id="'+selected[0]+'"]').count()===0);
+  await other.close();
+  const persisted=await api('/api/state');await page.reload();await page.waitForFunction(()=>state?.libraries?.length>=5);
+  state=await api('/api/state');
+  check('UI batch sources, libraries and bulk tags persist after reload',state.sources.length===persisted.sources.length&&state.libraries.some(l=>l.id===scale.id)&&state.charts.filter(c=>c.tags.includes('Bulk tagged')).length===100);
+  check('Batch organization UI remains offline with zero JavaScript errors',network.length===0&&errors.length===0);
+  await writeFile(path.join(root,'docs/browser-organization-edge-ui-qa.json'),JSON.stringify({date:'2026-10-22',environment:'file:// offline Chrome; temporary profile; synthetic batch/failure/scale fixtures',checks,errors,network},null,2)+'\n');
+  process.stdout.write(JSON.stringify({checks:checks.length,errors,network},null,2)+'\n');
+}catch(error){process.stderr.write(JSON.stringify({completedChecks:checks.length,lastCheck:checks.at(-1),errors},null,2)+'\n');throw error;}
+finally{if(browser)await browser.close();await rm(temp,{recursive:true,force:true});}

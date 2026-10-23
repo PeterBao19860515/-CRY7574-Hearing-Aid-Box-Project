@@ -1,0 +1,26 @@
+data/
+__pycache__/
+*.py[cod]
+.DS_Store
+.tools/
+
+portable/seed.json
+
+# Local measurement evidence and generated copies containing source data.
+reference/
+/CRY7574 Hearing Aid Box Measurement Manage Software.html
+docs/*.png
+docs/browser-*.json
+*.xlsx
+*.xls
+*.csv
+*.sqlite3
+*.sqlite3-*
+CRY7574-backup-*.json
+.env
+.env.*
+
+# Local verification evidence may contain private source metadata.
+docs/*.json
+node_modules/
+*.log
