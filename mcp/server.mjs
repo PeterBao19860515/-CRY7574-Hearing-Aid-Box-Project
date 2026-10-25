@@ -17,6 +17,8 @@ const protocol='2025-11-25',versions=['2024-11-05','2025-03-26','2025-06-18',pro
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const timeout=Math.max(100,Math.min(60000,Number(process.env.CRY7574_MCP_TOOL_TIMEOUT_MS)||30000));
 const allowedOrigins=new Set(['null','http://127.0.0.1:7574']);
+const requirementMimes={ppt:'application/vnd.ms-powerpoint',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pdf:'application/pdf',html:'text/html',htm:'text/html'};
+const fileTools=new Set(['import_file','upload_requirement_file']);
 function validConnection(c){return c&&/^http:\/\/127\.0\.0\.1:\d+$/.test(c.url)&&Number(new URL(c.url).port)>0&&Number(new URL(c.url).port)<=65535&&/^[a-f0-9]{64}$/.test(c.token);}
 async function config(){try{const c=JSON.parse(await readFile(connectionFile,'utf8'));return validConnection(c)?c:null;}catch{return null;}}
 async function localRequest(c,route,body={},limit=timeout+3000){
@@ -78,15 +80,20 @@ async function startBroker(){
    }
    if(req.url==='/mcp/dispatch'){
     const tool=TOOLS.find(t=>t.name===body.operation);if(!tool||body.operation==='get_connection_status'){send(res,400,{error:'Unknown bridge operation'});return;}
-    // import_file is prevalidated by the stdio tool then carries source bytes to the browser.
-    if(body.operation==='import_file'){
-     const a=body.args;if(!a||typeof a.name!=='string'||!a.name||a.name.length>200||!['xlsx','csv','json'].includes(a.format)||typeof a.contentBase64!=='string'||!a.contentBase64||a.contentBase64.length>28*1024*1024||!/^[A-Za-z0-9+/]*={0,2}$/.test(a.contentBase64)||typeof a.operationId!=='string'||a.operationId.length>100)throw Error('Invalid import payload');
-     const {name,format,contentBase64,operationId,...options}=a;validate(tool.inputSchema,{filePath:name,...options});
+    // File tools are prevalidated by stdio, then carry only the explicitly selected source bytes.
+    if(fileTools.has(body.operation)){
+     const a=body.args,document=body.operation==='upload_requirement_file';if(!a||typeof a.name!=='string'||!a.name||a.name.length>200||typeof a.contentBase64!=='string'||!a.contentBase64||a.contentBase64.length>28*1024*1024||!/^[A-Za-z0-9+/]*={0,2}$/.test(a.contentBase64)||typeof a.operationId!=='string'||a.operationId.length>100)throw Error('Invalid file payload');
+     if(document){if(a.mime!==requirementMimes[path.extname(a.name).slice(1).toLowerCase()]||!a.mime)throw Error('Unsupported Requirement document type');}
+     else if(!['xlsx','csv','json'].includes(a.format))throw Error('Invalid import format');
+     const {name,format,mime,contentBase64,operationId,...options}=a;
+     if(document&&format!==undefined||!document&&mime!==undefined)throw Error('Invalid file payload fields');
+     if(Object.hasOwn(options,'filePath'))throw Error('Local file paths are not accepted by the browser dispatch route');
+     validate(tool.inputSchema,{filePath:name,...options});
     }else validate(tool.inputSchema,body.args);
     if(!client){send(res,409,{error:'No browser connected. In the software open More tools → Codex MCP, load the connection file, and connect.'});return;}
     if(queue.length+(active?1:0)>=16){send(res,429,{error:'Bridge command queue is full'});return;}
     const command={id:randomUUID(),operation:body.operation,args:body.args,res,delivered:false};
-    command.timer=setTimeout(()=>{queue=queue.filter(c=>c!==command);if(active===command){active=null;complete(command,'Browser command timed out after delivery. Outcome may be uncertain; inspect the workspace before retrying a write.');disconnect('Connection reset after an uncertain command');}else complete(command,'Browser did not receive this command before timeout.');},body.operation==='import_file'?Math.max(timeout,55000):timeout);
+    command.timer=setTimeout(()=>{queue=queue.filter(c=>c!==command);if(active===command){active=null;complete(command,'Browser command timed out after delivery. Outcome may be uncertain; inspect the workspace before retrying a write.');disconnect('Connection reset after an uncertain command');}else complete(command,'Browser did not receive this command before timeout.');},fileTools.has(body.operation)?Math.max(timeout,55000):timeout);
     queue.push(command);res.once('close',()=>{if(!res.writableEnded){if(active===command){active=null;clearTimeout(command.timer);disconnect('MCP client canceled an active command');}else{queue=queue.filter(c=>c!==command);clearTimeout(command.timer);}}});deliver();return;
    }
    if(!client||body.sessionId!==client.sessionId){send(res,409,{error:'Browser session is not connected'});return;}client.lastSeen=Date.now();
@@ -137,13 +144,14 @@ async function runStdio(){
    if(tool.name==='get_connection_status')result=await localRequest(c,'/mcp/status');
    else{
     let payload=args;
-    if(tool.name==='import_file'){
+    if(fileTools.has(tool.name)){
      if(!path.isAbsolute(args.filePath))throw Error('filePath must be an absolute local path');
-     const format=path.extname(args.filePath).slice(1).toLowerCase();if(!['xlsx','csv','json'].includes(format))throw Error('Import supports XLSX, CSV and JSON only');
+     const format=path.extname(args.filePath).slice(1).toLowerCase(),document=tool.name==='upload_requirement_file';
+     if(document?!requirementMimes[format]:!['xlsx','csv','json'].includes(format))throw Error(document?'Requirement supports PPT, PPTX, DOC, DOCX, PDF and HTML only':'Import supports XLSX, CSV and JSON only');
      const source=await open(args.filePath,'r');let bytes;try{const info=await source.stat();if(!info.isFile()||info.size<1||info.size>20*1024*1024)throw Error('Import requires a regular file of 1 byte–20 MiB');const buffer=Buffer.alloc(20*1024*1024+1);let length=0;while(length<buffer.length){const read=await source.read(buffer,length,buffer.length-length,null);if(!read.bytesRead)break;length+=read.bytesRead;}if(length>20*1024*1024)throw Error('Import file grew beyond 20 MiB');bytes=buffer.subarray(0,length);}finally{await source.close();}
-     const {filePath,...options}=args;payload={...options,name:path.basename(filePath),format,contentBase64:bytes.toString('base64'),operationId:randomUUID()};
+     const {filePath,...options}=args;payload={...options,name:path.basename(filePath),...(document?{mime:requirementMimes[format]}:{format}),contentBase64:bytes.toString('base64'),operationId:randomUUID()};
     }
-    result=(await localRequest(c,'/mcp/dispatch',{operation:tool.name,args:payload},tool.name==='import_file'?60000:timeout+3000)).result;
+    result=(await localRequest(c,'/mcp/dispatch',{operation:tool.name,args:payload},fileTools.has(tool.name)?60000:timeout+3000)).result;
    }
    reply({content:[{type:'text',text:JSON.stringify(result??null)}],structuredContent:result&&typeof result==='object'&&!Array.isArray(result)?result:{result},isError:false});
   }catch(e){reply({content:[{type:'text',text:e.name==='TimeoutError'?'Local bridge timed out. Inspect the workspace before retrying a write.':e.message||'Local tool failed'}],isError:true});}finally{inflight--;}

@@ -33,7 +33,7 @@ def empty_workspace():
         }],
         **{key: [] for key in (
             'charts', 'sources', 'tasks', 'reports', 'activity', 'groups',
-            'comparisons', 'environmentMedia', 'specifications',
+            'comparisons', 'environmentMedia', 'specifications', 'scheduleCards', 'requirements', 'planItems',
         )},
     }
 
@@ -62,7 +62,7 @@ def main():
     html = html.replace('__CRYSOUND_LOGO__', 'data:image/png;base64,' + base64.b64encode(logo).decode('ascii'))
     html = html.replace('<!--WORKSPACE_STYLE-->', '<style>' + (ROOT / 'portable/workspace.css').read_text(encoding='utf-8') + '</style>')
     scripts = '<script type="application/json" id="portable-seed">' + seed_json + '</script>'
-    for name in ['display.js', 'appearance.js', 'limits.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'workspace.js', 'mcp-bridge.js']:
+    for name in ['display.js', 'appearance.js', 'limits.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'requirements.js', 'overall-plan.js', 'workspace.js', 'mcp-bridge.js']:
         scripts += '<script>' + inline((ROOT / 'portable' / name).read_text(encoding='utf-8')) + '</script>'
     html = html.replace('<!--WORKSPACE_SCRIPTS-->', scripts)
     output = args.output.expanduser() if args.output else ROOT / NAME

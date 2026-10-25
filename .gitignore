@@ -14,6 +14,11 @@ docs/browser-*.json
 *.xlsx
 *.xls
 *.csv
+*.ppt
+*.pptx
+*.doc
+*.docx
+*.pdf
 *.sqlite3
 *.sqlite3-*
 CRY7574-backup-*.json

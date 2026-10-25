@@ -7,7 +7,7 @@
     const date = new Date(value);
     return Number.isFinite(date.getTime()) ? date.toLocaleString('en-US') : value || 'Unknown';
   };
-  const taskFields = ['id', 'title', 'owner', 'status', 'percent', 'weight', 'startDate', 'dueDate', 'notes'];
+  const taskFields = ['id', 'title', 'owner', 'status', 'percent', 'weight', 'startDate', 'dueDate', 'notes', 'cardId', 'statusDetail'];
   let mounted = false;
 
   window.WorkspaceTools = {
@@ -16,6 +16,7 @@
       mounted = true;
       let reportDraft = null, openingReport = false, currentTab = 'reports', taskDraftRevision = null, taskDeleteTarget = null, taskSaving = false, taskDeleteBusy = false;
       const pages = {reports:0, progress:0, backups:0};
+      let cardPage=0, cardDraftRevision=null, cardDeleteTarget=null, cardBusy=false;const taskPages=new Map();
       const pageSize = 50;
       const pageRows = (name, rows) => {
         pages[name] = Math.max(0, Math.min(pages[name], Math.ceil(rows.length / pageSize) - 1));
@@ -25,7 +26,7 @@
       const state = () => getState() || {charts:[], reports:[], sources:[], tasks:[], summary:{}};
       const error = (dialog, message = '') => $(dialog + ' .form-error').textContent = message;
       const open = dialog => { if (!$(dialog).open) $(dialog).showModal(); };
-      const openSchedule = () => { if ($('#toolsDialog').open) $('#toolsDialog').close(); window.WorkspaceApp?.showView('schedule'); render(); };
+      const openSchedule = () => { $('#scheduleTaskBoard')?.click(); if ($('#toolsDialog').open) $('#toolsDialog').close(); window.WorkspaceApp?.showView('schedule'); render(); };
       const setTab = name => {
         if(name === 'progress'){openSchedule();return;}
         currentTab = name;
@@ -36,7 +37,7 @@
       };
       for (const button of document.querySelectorAll('.tool-tab')) button.onclick = () => { setTab(button.dataset.tool); render(); };
       $('#openTools').onclick = () => { open('#toolsDialog'); render(); };
-      for (const id of ['taskSearch', 'taskStatusFilter']) $('#'+id).addEventListener(id === 'taskSearch' ? 'input' : 'change', () => { pages.progress = 0; render(); });
+      for (const id of ['taskSearch', 'taskStatusFilter']) $('#'+id).addEventListener(id === 'taskSearch' ? 'input' : 'change', () => { pages.progress = 0;cardPage=0;taskPages.clear(); render(); });
       $('#taskGanttDetails').addEventListener('toggle', () => { if ($('#taskGanttDetails').open) render(); });
       const pageClick = event => {
         const button = event.target.closest('button[data-tools-page]');
@@ -62,23 +63,32 @@
         }
       }
 
-      function renderSchedule(data) {
-          const query = $('#taskSearch').value.trim().toLocaleLowerCase('en-US'), filter = $('#taskStatusFilter').value;
-          const matching = data.tasks.filter(task => (!query || [task.title, task.owner, task.notes].join(' ').toLocaleLowerCase('en-US').includes(query)) && (filter === 'all' || (filter === 'overdue' ? isOverdue(task) : task.status === filter))).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)||a.title.localeCompare(b.title,'en'));
-          const current = pageRows('progress', matching);
-          $('#taskRows').innerHTML = current.length ? current.map(task => `<tr data-task-id="${esc(task.id)}" data-overdue="${isOverdue(task)}"><td><strong>${esc(task.title)}</strong><small>${esc(task.notes || 'No notes recorded.')}</small></td><td>${esc(task.owner)}</td><td>${esc(task.startDate || 'Not set')}</td><td>${esc(task.dueDate || 'Not set')}${isOverdue(task) ? '<span class="task-overdue">Overdue</span>' : ''}</td><td>${esc(task.status)}</td><td>${esc(task.percent)}%</td><td><button type="button" data-task-id="${esc(task.id)}">Edit</button> <button type="button" class="danger-text" data-task-delete="${esc(task.id)}">Delete</button></td></tr>`).join('') : '<tr><td colspan="7">No tasks match these filters.</td></tr>';
-          const colors = {'Planned':'planned','In progress':'in-progress','Blocked':'blocked','Complete':'complete'};
-          $('#taskCards').innerHTML = current.map(task=>`<article class="task-card task-${colors[task.status]}" data-task-id="${esc(task.id)}" data-status="${esc(task.status)}" data-overdue="${isOverdue(task)}"><header><h3 title="${esc(task.title)}">${esc(task.title)}</h3><span class="task-status">${esc(task.status)}</span></header><dl><div><dt>Owner</dt><dd title="${esc(task.owner)}">${esc(task.owner)}</dd></div><div><dt>Start date</dt><dd>${esc(task.startDate||'Not set')}</dd></div><div><dt>Due date</dt><dd>${esc(task.dueDate||'Not set')}${isOverdue(task)?'<span class="task-overdue">Overdue</span>':''}</dd></div></dl><div class="task-card-completion"><strong>${esc(task.percent)}% complete</strong><progress max="100" value="${task.percent}" aria-label="Completion for ${esc(task.title)}"></progress></div><p class="task-card-notes" title="${esc(task.notes||'No notes recorded.')}">${esc(task.notes||'No notes recorded.')}</p><footer><button type="button" data-task-id="${esc(task.id)}">Edit</button><button type="button" class="danger-text" data-task-delete="${esc(task.id)}">Delete</button></footer></article>`).join('');
-          $('#taskCardsEmpty').hidden=!!current.length;
-          $('#taskCardsPager').innerHTML=pager('progress',matching.length);
-          $('#taskMatchCount').textContent = matching.length + ' matching tasks · Page ' + (pages.progress + 1) + ' · ' + current.length + ' shown · Latest changes first. Overdue uses your local calendar; completed tasks are excluded.';
-          const weight = data.tasks.reduce((sum, task) => sum + task.weight, 0);
-          const completion = weight ? data.tasks.reduce((sum, task) => sum + task.weight * task.percent, 0) / weight : 0;
-          $('#scheduleStats').innerHTML='<div><small>Total tasks</small><strong>'+data.tasks.length+'</strong></div><div><small>Complete</small><strong>'+data.tasks.filter(t=>t.status==='Complete').length+'</strong></div><div><small>Overdue</small><strong>'+data.tasks.filter(isOverdue).length+'</strong></div><div><small>Overall weighted progress</small><strong>'+completion.toFixed(1)+'%</strong><progress max="100" value="'+completion+'" aria-label="Overall weighted task completion"></progress></div>';
-          $('#projectCompletion').textContent = 'Recorded weighted completion: ' + completion.toFixed(1) + '% · ' + data.tasks.length + ' tasks';
-          if ($('#taskGanttDetails').open) renderGantt(current);
+      function scheduleGroups(data) {
+        const query=$('#taskSearch').value.trim().toLocaleLowerCase('en-US'),filter=$('#taskStatusFilter').value;
+        const byCard=new Map();for(const task of data.tasks){const key=task.cardId||'';if(!byCard.has(key))byCard.set(key,[]);byCard.get(key).push(task);}
+        const cards=[...(data.scheduleCards||[])].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)||a.title.localeCompare(b.title,'en'));
+        if(byCard.has(''))cards.push({id:'',title:'Ungrouped tasks',notes:'Tasks not assigned to a project or workgroup.'});
+        return cards.map(card=>{const titleMatch=!!query&&card.title.toLocaleLowerCase('en-US').includes(query),all=byCard.get(card.id)||[],tasks=all.filter(t=>(!query||titleMatch||[t.title,t.owner,t.notes,t.statusDetail].join(' ').toLocaleLowerCase('en-US').includes(query))&&(filter==='all'||(filter==='overdue'?isOverdue(t):t.status===filter))).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)||a.title.localeCompare(b.title,'en'));return {card,all,tasks,titleMatch};}).filter(g=>g.tasks.length||(!query&&filter==='all')||(g.titleMatch&&filter==='all'));
       }
-
+      function renderSchedule(data) {
+          const groups=scheduleGroups(data),matching=groups.flatMap(g=>g.tasks).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)||a.title.localeCompare(b.title,'en')),current=pageRows('progress',matching);
+          cardPage=Math.max(0,Math.min(cardPage,Math.ceil(groups.length/6)-1));const visible=groups.slice(cardPage*6,cardPage*6+6);
+          $('#taskRows').innerHTML=current.length?current.map(task=>`<tr data-task-id="${esc(task.id)}" data-overdue="${isOverdue(task)}"><td><strong>${esc(task.title)}</strong><small>${esc(task.statusDetail||task.notes||'No written update.')}</small></td><td>${esc(task.owner)}</td><td>${esc(task.startDate||'Not set')}</td><td>${esc(task.dueDate||'Not set')}${isOverdue(task)?'<span class="task-overdue">Overdue</span>':''}</td><td>${esc(task.status)}</td><td>${esc(task.percent)}%</td><td><button type="button" data-task-id="${esc(task.id)}">Edit</button> <button type="button" class="danger-text" data-task-delete="${esc(task.id)}">Delete</button></td></tr>`).join(''):'<tr><td colspan="7">No tasks match these filters.</td></tr>';
+          $('#taskCards').innerHTML=visible.map(({card,all,tasks})=>{
+            let page=Math.max(0,Math.min(taskPages.get(card.id)||0,Math.ceil(tasks.length/10)-1));taskPages.set(card.id,page);const rows=tasks.slice(page*10,page*10+10),weight=all.reduce((n,t)=>n+t.weight,0),completion=weight?all.reduce((n,t)=>n+t.weight*t.percent,0)/weight:0;
+            return `<article class="schedule-group-card" data-card-id="${esc(card.id)}"><header><div><h3 title="${esc(card.title)}">${esc(card.title)}</h3><p class="card-notes" title="${esc(card.notes||'')}">${esc(card.notes||'')}</p><small>${all.length} tasks · ${completion.toFixed(1)}% weighted progress</small></div><div class="card-actions"><button type="button" data-add-card-task="${esc(card.id)}">＋ Add task</button>${card.id?`<button type="button" data-edit-card="${esc(card.id)}">Edit card</button><button type="button" class="danger-text" data-delete-card="${esc(card.id)}">Delete card</button>`:''}</div></header><div class="schedule-card-scroll"><table><thead><tr><th>Task</th><th>Current Status</th><th>Progress</th><th>DRI</th></tr></thead><tbody>${rows.length?rows.map(task=>`<tr data-task-id="${esc(task.id)}" data-status="${esc(task.status)}" data-overdue="${isOverdue(task)}"><td><strong title="${esc(task.title)}">${esc(task.title)}</strong><small>${esc(task.startDate||'Start not set')} → ${esc(task.dueDate||'Due not set')}${isOverdue(task)?'<span class="task-overdue">Overdue</span>':''}</small><div class="task-row-actions"><button type="button" data-task-id="${esc(task.id)}">Edit</button><button type="button" class="danger-text" data-task-delete="${esc(task.id)}">Delete</button></div></td><td><div class="task-status-detail" ${task.statusDetail?'':'hidden'} title="${esc(task.statusDetail||'')}">${esc(task.statusDetail||'')}</div><span class="task-status">${esc(task.status)}</span></td><td><strong>${esc(task.percent)}%</strong><progress max="100" value="${task.percent}" aria-label="Completion for ${esc(task.title)}"></progress></td><td class="task-dri" title="${esc(task.owner)}">${esc(task.owner)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">No tasks in this card. Add a task to begin.</td></tr>'}</tbody></table></div>${tasks.length>10?`<div class="pagination"><button type="button" data-card-task-page="${esc(card.id)}" data-step="-1" ${page===0?'disabled':''}>← Previous tasks</button><span>Tasks ${page*10+1}–${Math.min(tasks.length,(page+1)*10)} of ${tasks.length}</span><button type="button" data-card-task-page="${esc(card.id)}" data-step="1" ${(page+1)*10>=tasks.length?'disabled':''}>Next tasks →</button></div>`:''}</article>`;
+          }).join('');
+          $('#taskCardsEmpty').hidden=!!visible.length;
+          $('#taskCardsPager').innerHTML=groups.length>6?`<div class="pagination"><button type="button" id="scheduleCardsPrev" ${cardPage===0?'disabled':''}>← Previous cards</button><span>Cards ${cardPage*6+1}–${Math.min(groups.length,(cardPage+1)*6)} of ${groups.length}</span><button type="button" id="scheduleCardsNext" ${(cardPage+1)*6>=groups.length?'disabled':''}>Next cards →</button></div>`:'';
+          $('#flatTasksPager').innerHTML=pager('progress',matching.length);
+          $('#taskMatchCount').textContent=groups.length+' matching cards · '+matching.length+' matching tasks · Up to 6 cards and 10 task rows per card. Empty cards appear in All statuses; title searches can match a whole card.';
+          const weight=data.tasks.reduce((n,t)=>n+t.weight,0),completion=weight?data.tasks.reduce((n,t)=>n+t.weight*t.percent,0)/weight:0;
+          $('#scheduleStats').innerHTML='<div><small>Project / workgroup cards</small><strong>'+(data.scheduleCards||[]).length+'</strong></div><div><small>Total tasks</small><strong>'+data.tasks.length+'</strong></div><div><small>Overdue</small><strong>'+data.tasks.filter(isOverdue).length+'</strong></div><div><small>Overall weighted progress</small><strong>'+completion.toFixed(1)+'%</strong><progress max="100" value="'+completion+'" aria-label="Overall weighted task completion"></progress></div>';
+          $('#projectCompletion').textContent='Recorded weighted completion: '+completion.toFixed(1)+'% · '+data.tasks.filter(t=>t.status==='Complete').length+' complete / '+data.tasks.length+' tasks';
+          if($('#taskGanttDetails').open)renderGantt(current);
+      }
+      function clearTaskFilters(){pages.progress=0;cardPage=0;taskPages.clear();$('#taskSearch').value='';$('#taskStatusFilter').value='all';}
+      function revealCard(cardId){const groups=scheduleGroups(state()),index=groups.findIndex(g=>g.card.id===cardId);if(index>=0)cardPage=Math.floor(index/6);taskPages.set(cardId,0);}
       function localToday() {
         const now = new Date();
         return String(now.getFullYear()).padStart(4, '0') + '-' + String(now.getMonth()+1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
@@ -95,9 +105,10 @@
         const rows = dated.map((task,i)=>{const y=48+i*28, start=x(day(task.startDate)), width=Math.max(2,700*(day(task.dueDate)-day(task.startDate)+1)/span);return `<g data-task-id="${esc(task.id)}"><title>${esc(task.title)} · ${esc(task.startDate)} to ${esc(task.dueDate)} · ${esc(task.status)} · ${esc(task.percent)}%</title><text x="8" y="${y+12}" font-size="11" fill="#4c3e5c">${esc(task.title.length>34?task.title.slice(0,31)+'…':task.title)}</text><rect x="${start}" y="${y}" width="${width}" height="17" rx="3" fill="#eee8f4"/><rect x="${start}" y="${y}" width="${width*task.percent/100}" height="17" rx="3" fill="${colors[task.status]}"/><rect x="${start}" y="${y}" width="${width}" height="17" rx="3" fill="none" stroke="${colors[task.status]}"/></g>`;}).join('');
         $('#taskGantt').innerHTML = `<svg viewBox="0 0 1000 ${70+dated.length*28}" role="img" aria-label="Task schedule for the current filtered page">${labels}${rows}</svg>`;
       }
-      function openTask(task) {
+      function openTask(task,cardId='') {
         $('#taskForm').reset(); error('#taskDialog'); taskDraftRevision = task?.revision ?? null;
-        const values = {id:'', title:'', owner:'', status:'Planned', percent:0, weight:1, startDate:'', dueDate:'', notes:'', ...task};
+        $('#taskCardSelect').innerHTML='<option value="">Ungrouped tasks</option>'+(state().scheduleCards||[]).map(card=>`<option value="${esc(card.id)}">${esc(card.title)}</option>`).join('');
+        const values = {id:'', title:'', owner:'', status:'Planned', percent:0, weight:1, startDate:'', dueDate:'', notes:'',cardId,statusDetail:'', ...task};
         for (const name of taskFields) $('#taskForm').elements.namedItem(name).value = values[name] ?? '';
         $('#taskDialog h2').textContent = task ? 'Edit project task' : 'Add project task'; open('#taskDialog');
       }
@@ -113,7 +124,8 @@
         if (!task) return;
         if (edit) openTask(task); else if (remove) requestTaskDeletion(task.id);
       };
-      $('#taskCards').onclick=taskAction;$('#taskRows').onclick=taskAction;
+      $('#taskCards').onclick=event=>{const add=event.target.closest('[data-add-card-task]'),edit=event.target.closest('[data-edit-card]'),remove=event.target.closest('[data-delete-card]'),page=event.target.closest('[data-card-task-page]');if(add){openTask(null,add.dataset.addCardTask);return;}if(edit){openCard(state().scheduleCards.find(c=>c.id===edit.dataset.editCard));return;}if(remove){requestScheduleCardDeletion(remove.dataset.deleteCard);return;}if(page&&!page.disabled){taskPages.set(page.dataset.cardTaskPage,(taskPages.get(page.dataset.cardTaskPage)||0)+Number(page.dataset.step));render();return;}taskAction(event);};$('#taskRows').onclick=taskAction;
+      $('#taskCardsPager').onclick=event=>{if(event.target.disabled)return;if(event.target.id==='scheduleCardsPrev')cardPage--;if(event.target.id==='scheduleCardsNext')cardPage++;render();};
       $('#taskForm').elements.namedItem('status').onchange = event => {
         if (event.target.value === 'Planned') $('#taskForm').elements.namedItem('percent').value = 0;
         if (event.target.value === 'Complete') $('#taskForm').elements.namedItem('percent').value = 100;
@@ -125,7 +137,7 @@
         const form = event.currentTarget, values = Object.fromEntries(new FormData(form)), id = values.id; delete values.id;
         values.percent = Number(values.percent); values.weight = Number(values.weight); if(id) values.expectedRevision = taskDraftRevision;
         error('#taskDialog'); taskSaving=true; lockTask('#taskDialog',true);
-        try { await request('/api/tasks' + (id ? '/' + id : ''), {method:id?'PATCH':'POST',body:values}); if(!id){pages.progress=0;$('#taskSearch').value='';$('#taskStatusFilter').value='all';} await refresh(true); $('#taskDialog').close(); notify('Project task saved.'); }
+        try { await request('/api/tasks' + (id ? '/' + id : ''), {method:id?'PATCH':'POST',body:values}); if(!id)clearTaskFilters(); await refresh(true);if(!id){revealCard(values.cardId);render();} $('#taskDialog').close(); notify('Project task saved.'); }
         catch(cause) { error('#taskDialog',cause.message||String(cause)); if(/Task changed|Task not found/.test(cause.message)) await refresh(true).catch(()=>{}); }
         finally { taskSaving=false; lockTask('#taskDialog',false); }
       };
@@ -134,6 +146,16 @@
       $('#taskDeleteDialog').addEventListener('cancel',event=>{if(taskDeleteBusy)event.preventDefault();});
       $('#taskDeleteDialog').addEventListener('close',()=>{$('#taskDeleteForm').reset();taskDeleteTarget=null;taskDeleteReady();});
       $('#taskDeleteForm').onsubmit=async event=>{event.preventDefault();if(taskDeleteBusy||!taskDeleteTarget||!$('#taskDeleteConfirm').checked)return;taskDeleteBusy=true;lockTask('#taskDeleteDialog',true);error('#taskDeleteDialog');try{await request('/api/tasks/'+taskDeleteTarget.id+'/delete',{method:'POST',body:{password:$('#taskDeletePassword').value,confirmed:true,expectedRevision:taskDeleteTarget.revision}});$('#taskDeleteDialog').close();await refresh(true);notify('Task deleted.');}catch(cause){error('#taskDeleteDialog',cause.message||String(cause));if(/Task changed|Task not found/.test(cause.message)){taskDeleteTarget=null;await refresh(true).catch(()=>{});}}finally{taskDeleteBusy=false;lockTask('#taskDeleteDialog',false);$('#taskDeletePassword').value='';$('#taskDeleteConfirm').checked=false;taskDeleteReady();}};
+
+      function openCard(card){$('#scheduleCardForm').reset();error('#scheduleCardDialog');cardDraftRevision=card?.revision??null;for(const name of ['id','title','notes'])$('#scheduleCardForm').elements.namedItem(name).value=card?.[name]||'';$('#scheduleCardDialog h2').textContent=card?'Edit project / workgroup card':'New project / workgroup card';open('#scheduleCardDialog');}
+      $('#addScheduleCard').onclick=()=>openCard(null);
+      $('#scheduleCardDialog').addEventListener('cancel',event=>{if(cardBusy)event.preventDefault();});
+      $('#scheduleCardForm').onsubmit=async event=>{event.preventDefault();if(cardBusy)return;const values=Object.fromEntries(new FormData(event.currentTarget)),id=values.id;delete values.id;if(id)values.expectedRevision=cardDraftRevision;cardBusy=true;lockTask('#scheduleCardDialog',true);error('#scheduleCardDialog');try{const card=await request('/api/schedule-cards'+(id?'/'+id:''),{method:id?'PATCH':'POST',body:values});if(!id)clearTaskFilters();await refresh(true);if(!id){revealCard(card.id);render();}$('#scheduleCardDialog').close();notify('Schedule card saved.');}catch(cause){error('#scheduleCardDialog',cause.message);if(/changed|not found/.test(cause.message))await refresh(true).catch(()=>{});}finally{cardBusy=false;lockTask('#scheduleCardDialog',false);}};
+      function cardDeleteReady(){$('#confirmScheduleCardDelete').disabled=cardBusy||!cardDeleteTarget||!$('#scheduleCardDeletePassword').value||!$('#scheduleCardDeleteConfirm').checked;}
+      function requestScheduleCardDeletion(id){if(cardBusy||taskSaving||taskDeleteBusy||document.querySelector('dialog[open]'))return false;const card=(state().scheduleCards||[]).find(c=>c.id===id);if(!card)return false;cardDeleteTarget={...card};$('#scheduleCardDeleteForm').reset();error('#scheduleCardDeleteDialog');const count=state().tasks.filter(t=>t.cardId===id).length;$('#scheduleCardDeleteScope').textContent='Delete “'+card.title+'”? '+count+' tasks currently belong to this card. Only an empty card can be deleted; move any tasks first. No tasks will be deleted.';cardDeleteReady();open('#scheduleCardDeleteDialog');return true;}
+      $('#scheduleCardDeletePassword').oninput=cardDeleteReady;$('#scheduleCardDeleteConfirm').onchange=cardDeleteReady;
+      $('#scheduleCardDeleteDialog').addEventListener('cancel',event=>{if(cardBusy)event.preventDefault();});$('#scheduleCardDeleteDialog').addEventListener('close',()=>{$('#scheduleCardDeleteForm').reset();cardDeleteTarget=null;cardDeleteReady();});
+      $('#scheduleCardDeleteForm').onsubmit=async event=>{event.preventDefault();if(cardBusy||!cardDeleteTarget||!$('#scheduleCardDeleteConfirm').checked)return;cardBusy=true;lockTask('#scheduleCardDeleteDialog',true);error('#scheduleCardDeleteDialog');try{await request('/api/schedule-cards/'+cardDeleteTarget.id+'/delete',{method:'POST',body:{password:$('#scheduleCardDeletePassword').value,confirmed:true,expectedRevision:cardDeleteTarget.revision}});$('#scheduleCardDeleteDialog').close();await refresh(true);notify('Empty schedule card deleted.');}catch(cause){error('#scheduleCardDeleteDialog',cause.message);if(/changed|not found/.test(cause.message))cardDeleteTarget=null;await refresh(true).catch(()=>{});}finally{cardBusy=false;lockTask('#scheduleCardDeleteDialog',false);$('#scheduleCardDeletePassword').value='';$('#scheduleCardDeleteConfirm').checked=false;cardDeleteReady();}};
 
       $('#createReport').onclick = async () => {
         if (openingReport) return;
@@ -170,7 +192,7 @@
         finally { button.disabled = false; }
       };
       setTab('reports'); render();
-      return {render,requestTaskDeletion};
+      return {render,requestTaskDeletion,requestScheduleCardDeletion};
     }
   };
 })();

@@ -4,19 +4,31 @@ const integer=(minimum,maximum)=>({type:'integer',minimum,maximum});
 const object=(properties={},required=[])=>({type:'object',properties,required,additionalProperties:false});
 const tags={type:'array',maxItems:30,items:{type:'string',minLength:1,maxLength:50}};
 const page={offset:integer(0,10000),limit:integer(1,100)};
-const task={title:{...string(),minLength:1},owner:{...string(100),minLength:1},startDate:date,dueDate:date,status:{enum:['Planned','In progress','Blocked','Complete']},percent:{type:'number',minimum:0,maximum:100},weight:{type:'number',minimum:.01,maximum:10000},notes:string(5000)};
+const cardId={type:'string',maxLength:100};
+const card={title:{...string(),minLength:1},notes:string(5000)};
+const task={title:{...string(),minLength:1},owner:{...string(100),minLength:1},cardId,statusDetail:string(2000),startDate:date,dueDate:date,status:{enum:['Planned','In progress','Blocked','Complete']},percent:{type:'number',minimum:0,maximum:100},weight:{type:'number',minimum:.01,maximum:10000},notes:string(5000)};
 const details={title:{...string(),minLength:1},testDate:date,testItem:string(100),notes:string(5000),tags,libraryId:id,hidden:{type:'boolean'}};
 const define=(name,description,inputSchema,readOnlyHint=false,destructiveHint=false)=>({name,description,inputSchema,annotations:{readOnlyHint,destructiveHint,idempotentHint:readOnlyHint,openWorldHint:false}});
 export const TOOLS=[
  define('get_connection_status','Check whether the local browser workspace is connected. Does not read measurements.',object(),true),
  define('get_workspace_summary','Read workspace counts, recorded project progress, display settings and capacity. Reference measurements are not CRY7574 certification.',object(),true),
+ define('list_requirements','Search Requirement documents by title, original filename or Note. Returns paginated metadata only, never original document bytes.',object({...page,query:string(500)}),true),
+ define('get_requirement','Read one Requirement document metadata and Note. Original bytes remain in the browser and are downloadable through its UI.',object({id},['id']),true),
+ define('upload_requirement_file','Upload one explicit absolute local PPT/PPTX, DOC/DOCX, PDF or HTML/HTM file (max 20 MiB) into Requirement, optionally with title and Note. Preserve original bytes; uncertain writes must be queried before retrying.',object({filePath:{type:'string',minLength:1,maxLength:4096},title:string(),note:string(5000)},['filePath'])),
+ define('update_requirement','Edit a Requirement document title or Note using its expectedRevision. Does not modify original document bytes.',object({id,expectedRevision:integer(1,Number.MAX_SAFE_INTEGER),changes:object({title:{...string(),minLength:1},note:string(5000)})},['id','expectedRevision','changes'])),
+ define('request_delete_requirement','OPEN the existing Requirement document deletion review in the browser. User must confirm and type CRYSOUND there; this tool does not delete directly and never accepts a password.',object({id},['id']),false,true),
+ define('show_requirements','Open the Requirement page in the explicitly connected browser.',object()),
  define('list_libraries','List existing measurement and specification Libraries.',object(),true),
  define('create_library','Create a Library; purpose is measurements or specifications. Does not invent measurement data.',object({name:{...string(100),minLength:1},description:string(500),purpose:{enum:['measurements','specifications']}},['name'])),
  define('list_records','Search measurement metadata by title, notes, source, tag or Library. Values and original files are excluded; results are paginated.',object({...page,query:string(500),libraryId:id,tag:string(50),visibility:{enum:['visible','hidden','all']}}),true),
  define('get_record','Read record metadata and one original series page. No interpolation, rounding or source-file bytes. Defaults: seriesIndex 0, offset 0, limit 100; max 1000 points.',object({id,seriesIndex:integer(0,31),offset:integer(0,200000),limit:integer(1,1000)},['id']),true),
  define('update_record','Edit title, actual test date, test item, tags, notes, Library or visibility. Original measurement numbers and source bytes cannot be edited.',object({id,changes:object(details)},['id','changes'])),
- define('list_tasks','Search Schedule tasks by title, owner, notes or status. Includes current revision for guarded updates.',object({...page,query:string(500),status:{enum:['all','Planned','In progress','Blocked','Complete']}}),true),
- define('create_task','Create a Schedule task with an explicitly supplied owner. Dates remain unknown unless supplied. Planned requires 0%; Complete requires 100%.',object(task,['title','owner'])),
+ define('list_schedule_cards','List project/work-group cards with derived task counts and recorded completion. Cards group original tasks; they do not copy or merge them.',object({...page,query:string(500)}),true),
+ define('create_schedule_card','Create a named project/work-group card. No example tasks or completion are invented.',object(card,['title'])),
+ define('update_schedule_card','Edit a project/work-group card title or notes using its current expectedRevision.',object({id,expectedRevision:integer(1,Number.MAX_SAFE_INTEGER),changes:object(card)},['id','expectedRevision','changes'])),
+ define('request_delete_schedule_card','OPEN browser confirmation for an empty project/work-group card only. Move its tasks first. User must confirm and type CRYSOUND in the browser; this tool never deletes directly.',object({id},['id']),false,true),
+ define('list_tasks','Search Schedule tasks by title, owner, current-status detail, notes or workflow status. Optional cardId filters one card; empty cardId means Ungrouped tasks. Includes revision for guarded updates.',object({...page,query:string(500),cardId,status:{enum:['all','Planned','In progress','Blocked','Complete']}}),true),
+ define('create_task','Create a Schedule task with an explicit DRI (owner). Optional cardId links an existing project/work-group; blank means Ungrouped. statusDetail is descriptive text, separate from the workflow status. Planned requires 0%; Complete requires 100%.',object(task,['title','owner'])),
  define('update_task','Update a Schedule task using the expectedRevision from list_tasks. A stale revision is rejected; do not automatically retry an uncertain write.',object({id,expectedRevision:integer(1,Number.MAX_SAFE_INTEGER),changes:object(task)},['id','expectedRevision','changes'])),
  define('list_specifications','List saved specification definitions, units and availability. Does not automatically apply any specification.',object(page),true),
  define('show_plot','Open selected original records in Plot view (1–12, matching units, at most 32 series). Changes the visible view only.',object({recordIds:{type:'array',minItems:1,maxItems:12,uniqueItems:true,items:id}},['recordIds'])),
