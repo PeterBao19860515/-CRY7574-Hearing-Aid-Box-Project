@@ -23,7 +23,7 @@ def empty_workspace():
     return {
         'version': 1,
         'appName': 'CRY7574 Hearing Aid Box Measurement Manage Software',
-        'settings': {'decimalPlaces': 'auto'},
+        'settings': {'decimalPlaces': 'auto', 'uiLanguage': 'en'},
         'libraries': [{
             'id': 'library-imports',
             'name': 'Measurements',
@@ -33,7 +33,7 @@ def empty_workspace():
         }],
         **{key: [] for key in (
             'charts', 'sources', 'tasks', 'reports', 'activity', 'groups',
-            'comparisons', 'environmentMedia', 'specifications', 'scheduleCards', 'requirements', 'planItems',
+            'comparisons', 'environmentMedia', 'specifications', 'scheduleCards', 'requirements', 'planItems', 'translations',
         )},
     }
 
@@ -60,9 +60,25 @@ def main():
     html = html.replace('__APP_VERSION__', version)
     logo = (ROOT / 'portable/assets/crysound-logo.png').read_bytes()
     html = html.replace('__CRYSOUND_LOGO__', 'data:image/png;base64,' + base64.b64encode(logo).decode('ascii'))
-    html = html.replace('<!--WORKSPACE_STYLE-->', '<style>' + (ROOT / 'portable/workspace.css').read_text(encoding='utf-8') + '</style>')
+    html = html.replace('<!--WORKSPACE_STYLE-->', '<style>' + '\n'.join((ROOT / 'portable' / name).read_text(encoding='utf-8') for name in ['workspace.css', 'theme.css']) + '</style>')
     scripts = '<script type="application/json" id="portable-seed">' + seed_json + '</script>'
-    for name in ['display.js', 'appearance.js', 'limits.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'requirements.js', 'overall-plan.js', 'workspace.js', 'mcp-bridge.js']:
+    pdf_dir = ROOT / 'portable/vendor/pdfjs'
+    encoded = lambda file: base64.b64encode(file.read_bytes()).decode('ascii')
+    pdf_assets = {
+        'version': '5.6.205',
+        'main': encoded(pdf_dir / 'pdf.min.mjs'),
+        'worker': encoded(pdf_dir / 'pdf.worker.min.mjs'),
+        'licenses': {str(file.relative_to(pdf_dir)): file.read_text(encoding='utf-8')
+                     for file in sorted(pdf_dir.rglob('*')) if file.is_file()
+                     and (file.name.startswith('LICENSE') or file.name == 'SOURCE.md')},
+        'files': {str(file.relative_to(pdf_dir)): encoded(file)
+                  for folder in ['cmaps', 'standard_fonts']
+                  for file in sorted((pdf_dir / folder).iterdir()) if file.is_file()
+                  and file.suffix in ['.bcmap', '.pfb', '.ttf']},
+    }
+    scripts += '<script type="application/json" id="document-index-assets">' + json.dumps(pdf_assets, separators=(',', ':')).replace('<', '\\u003c') + '</script>'
+
+    for name in ['theme.js', 'display.js', 'appearance.js', 'limits.js', 'document-index.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'requirements.js', 'overall-plan.js', 'i18n.js', 'bilingual.js', 'workspace.js', 'mcp-bridge.js']:
         scripts += '<script>' + inline((ROOT / 'portable' / name).read_text(encoding='utf-8')) + '</script>'
     html = html.replace('<!--WORKSPACE_SCRIPTS-->', scripts)
     output = args.output.expanduser() if args.output else ROOT / NAME

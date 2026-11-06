@@ -1,6 +1,6 @@
 # CRY7574 Hearing Aid Box Measurement Manage Software
 
-The primary program is a **single offline HTML file** with an English interface. Download [the standalone HTML](<dist/CRY7574 Hearing Aid Box Measurement Manage Software.html>) and open the downloaded file directly in a current Chrome or Edge browser. No Python, server, installation, account or network connection is required.
+The primary program is a **single offline HTML file** with an English/Chinese interface switch (English by default). Download [the standalone HTML](<dist/CRY7574 Hearing Aid Box Measurement Manage Software.html>) and open the downloaded file directly in a current Chrome or Edge browser. No Python, server, installation, account or network connection is required.
 
 Optional **Codex MCP control** uses a local Node.js bridge and the browser's **More tools → Codex MCP** connection panel. It operates the explicitly connected workspace and reuses existing data, metadata editing, Schedule and guarded deletion. See [MCP setup and tool reference](mcp/README.md). The normal standalone workflow still works without the bridge. To use MCP on another machine, copy the `mcp/` source folder and its parent `VERSION` file as well as the standalone HTML, install Node.js 20+, and register the server there; do not share the local pairing file.
 
@@ -19,6 +19,8 @@ Normal `python3 portable/build_portable.py` uses a local private seed when one e
 The pre-existing root `index.html`, `box-220mm*.html` and earlier `dist/index.html` belong to the earlier report site. They are retained unchanged; the current application is the separately named standalone HTML above. Pushing this branch does not replace the earlier site's entry page.
 
 ## Open the current program
+
+Use **Interface language → 中文 / English** to change interface labels without translating or rewriting user content. **More tools → Bilingual content** provides original/English metadata previews, a manual English editor, review status and an English metadata handoff export for measurement titles/test items/notes, task titles/status descriptions/notes, Overall Plan titles/notes and Requirement titles/Notes. Original source text and files stay unchanged. Source edits mark saved English as out of date; missing, unreviewed, changed or unavailable items block handoff export. The exported HTML contains reviewed English metadata only, not translated document bodies or measurement plots. Automatic translation is not configured; its button explains this and sends no network request. Interface language, English drafts and review state persist in this browser and full backups. Older backups default to English UI and no saved translations.
 
 **Requirement** follows Schedule in the main navigation. Upload original PPT/PPTX, DOC/DOCX, PDF and HTML/HTM documents and maintain a title and **Note** for each. Documents remain in the current browser workspace, with original-byte downloads and complete backup/restore. PDF preview depends on browser support; HTML is shown as inert source text, and Office files are downloadable originals. No document is sent to an online converter.
 

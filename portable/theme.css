@@ -1,0 +1,38 @@
+/* Light values retain the original CSS fallbacks. Dark is a device preference. */
+.appearance-setting{font-size:9px;min-width:88px}.appearance-setting select{font-size:11px;padding:7px 8px}.appearance-status{font-size:10px;line-height:1.5;max-width:230px;color:var(--warning-text,#89672f)}
+:root[data-theme=dark]{--ink:#e7e5ef;--muted:#bbb3ca;--purple:#b79af2;--cyan:#54d1ce;--line:#3a3d4e;--bg:#141720;--surface:#202430;--surface-soft:#2a2e3d;--border-ui:#44485d;--text-muted:#c0b5d0;--accent-text:#c7a9ff;--error-text:#ffacbf;--error-bg:#442936;--success-text:#81dfbe;--success-bg:#203c36;--warning-text:#f1ce8e;--legend-planned:#c0b5d0;--legend-progress:#c7a9ff;--legend-blocked:#ffacbf;--legend-complete:#81dfbe;--legend-today:#f1ce8e;color-scheme:dark}
+:root[data-theme=dark] button,:root[data-theme=dark] .button{color:#ded6ee;background:#292e3d;border-color:#4b4d65}
+:root[data-theme=dark] button:hover,:root[data-theme=dark] .button:hover{background:#36384e;border-color:#b496e3}
+:root[data-theme=dark] .primary{background:#7850bb;color:#fff;border-color:#9a78cc}
+:root[data-theme=dark] .primary:hover{background:#895ecb}
+:root[data-theme=dark] .danger{background:#a4405c;color:#fff;border-color:#d78aa1}
+:root[data-theme=dark] .danger:hover{background:#b34c68}
+:root[data-theme=dark] .nav-tab{background:transparent;color:#c1b4d2;border-color:transparent}
+:root[data-theme=dark] .nav-tab.active{color:#d2b8ff;border-bottom-color:#b591ed}
+:root[data-theme=dark] input,:root[data-theme=dark] select,:root[data-theme=dark] textarea{background:#181c27;color:#e7e5ef;border-color:#55586e}
+:root[data-theme=dark] input:focus,:root[data-theme=dark] select:focus,:root[data-theme=dark] textarea:focus{outline-color:#b596e6}
+:root[data-theme=dark] input::placeholder,:root[data-theme=dark] textarea::placeholder{color:var(--muted);opacity:1}
+:root[data-theme=dark] dialog{background:#202430;border-color:#5c516f;box-shadow:0 25px 100px #0009}
+:root[data-theme=dark] dialog::backdrop{background:#080b14b3}
+:root[data-theme=dark] .brand-logo{background:#f8f6fc;border-radius:5px;padding:6px;box-sizing:content-box}
+:root[data-theme=dark] .app-header{border-bottom-color:#454156}
+:root[data-theme=dark] .tool-tab.active,:root[data-theme=dark] .schedule-subviews button.active{background:#443159;color:#e0caff;border-color:#ac86db}
+:root[data-theme=dark] .schedule-subviews button{color:#c7b8da}
+:root[data-theme=dark] .plot-stage{background:#1c202b}
+:root[data-theme=dark] .trace-style-status[data-state=saved]{color:#afc8bd}
+:root[data-theme=dark] .task-status{color:#d4c4e5}
+:root[data-theme=dark] .plan-status{color:#e0d7ef}
+:root[data-theme=dark] .environment-preview{background:#12151d}
+:root[data-theme=dark] .environment-upload-result[data-state=error],:root[data-theme=dark] .environment-playback-error{color:#ffacbf}
+:root[data-theme=dark] #requirementPreviewContent pre{background:#171b25;color:#e6e3ed}
+:root[data-theme=dark] #requirementPreviewContent iframe{background:#e5e5e5}
+:root[data-theme=dark] progress{background:#3c4050}
+:root[data-theme=dark] .overall-plan-timeline svg rect[fill="#fff"]{fill:#202430}
+:root[data-theme=dark] .overall-plan-timeline svg [fill="#f0ebf6"],:root[data-theme=dark] .overall-plan-timeline svg [fill="#f1edf5"]{fill:#2a2e3d}
+:root[data-theme=dark] .overall-plan-timeline svg text[fill="#44364f"],:root[data-theme=dark] .overall-plan-timeline svg text[fill="#6e607d"],:root[data-theme=dark] .overall-plan-timeline svg text[fill="#8a7a98"],:root[data-theme=dark] #taskGantt svg text{fill:#d6cce2}
+:root[data-theme=dark] .overall-plan-timeline svg [stroke="#e3dcea"],:root[data-theme=dark] .overall-plan-timeline svg [stroke="#e6e0ed"]{stroke:#4d485c}
+:root[data-theme=dark] #taskGantt svg [stroke="#e6e0ed"]{stroke:#4d485c}
+:root[data-theme=dark] #taskGantt svg [fill="#eee8f4"]{fill:#383449}
+:root[data-theme=dark] #toast{background:#ded1ef;color:#211b2e}
+@media(min-width:1251px) and (max-width:1650px){.app-header{height:auto;min-height:100px;flex-wrap:wrap;padding-top:14px;padding-bottom:10px;gap:12px}.app-header .brand{max-width:360px}.header-tools{margin-left:auto}.app-header nav{height:48px}}
+@media(max-width:760px){.appearance-setting{min-width:90px}.appearance-status{max-width:100%;width:100%}}

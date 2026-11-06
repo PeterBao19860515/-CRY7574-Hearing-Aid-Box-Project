@@ -1,20 +1,23 @@
 {
   "distribution": {
     "path": "dist/CRY7574 Hearing Aid Box Measurement Manage Software.html",
-    "sha256": "e889484625be955b9c9b05925bbe93e455f5ee8ffd3603dd9d80a25082fd7a69"
+    "sha256": "5044073c4f51f9a67277e12b6a47356cffcbdba2aefaee1fbc8bc216a411a8dd"
   },
   "inputs": {
-    "VERSION": "9fd28642d3aca191e5c7fc2383cfd6fabb2aac8743f029dabb8989ac584e31bc",
+    "VERSION": "f5e5c9534532840fcd45bb002e69ed85c61dba2753450e26b448b7df1481e24d",
     "mcp/server.mjs": "07e5cdcfbfc054f834d91bf881970283b95ee9c678a37d3aa94456277ee5b249",
     "mcp/tools.mjs": "ae781c3544809e8fc37789ee294cdeb52d4123972c6d5393e0ee539fec5a8d05",
     "portable/appearance.js": "b6308a425a7491b80f1df1d2770adc75cd3d52f55248d71e16c44f19754ec6b0",
     "portable/assets/crysound-logo.png": "1d5f95040cd1ac6ae2a8c0c4e88a550f756a8eb36abcff473ec994afe5f316d3",
     "portable/axis-inputs.js": "bd0f039046fab0a2018728c9e8ca21aa14581e2ae4bce80e8a78b138f60e52f4",
     "portable/axis-ticks.js": "da6dac2baa9c99395bf3c11a3a58c8e2a9d275ad7f9ac12624ec08c698096564",
-    "portable/build_portable.py": "37cfc63d65400bf6828613aa67b41222d9e8227fdaa0d384ba8365d0dd4108db",
+    "portable/bilingual.js": "39e58cb248e5e763e65f96068a42b56c1d42fcb9e72fe48e340344d65b4f80ef",
+    "portable/build_portable.py": "3666235662ee70c581f3626b2c5a08ba5bb25fbdacae2f3540f7ffbd40c4d4ae",
     "portable/comparisons.js": "e2aa7d29f9803723f4143c4fe5671592a8d4dc794e1c0932743b867da404dbf4",
     "portable/display.js": "4173e97b4d350ae221d902827520b35b9b56f02a911692f72bb2b2e9e41a6a19",
+    "portable/document-index.js": "2c2d5605514930f5e36e28e87643207c73afed972e868a7b371cd06b619dc783",
     "portable/environment-media.js": "60ed4f59ba2a340d710982cb7d77b21254af16dea683892d4248882861111368",
+    "portable/i18n.js": "4e2183dfac9285e40778ac514e346db172381408ddc5cb60029e2ebe6af63cb7",
     "portable/library-first.css": "9e1a75d78435e71fa20239cbf0bc19421e2756d9bd37b6abd99fc927988de75f",
     "portable/library-first.html": "e13de9eb364d6a8c551f62c6f68eaaaab7456288e3168d39d78e49ea1c9cd0f5",
     "portable/library-first.js": "46bc086b774253208201c7f0d102fc7ea5c6fe60edf14033fc37a646a283f287",
@@ -23,18 +26,20 @@
     "portable/organization.css": "0dd2a94f119a041d809bf8bf08ffaaf8915e5f31612323c8002870fff5cbefcc",
     "portable/organization.html": "72e5bbed319c5517035a450ab637daf4bc3df87057f983e865005aa476bb627e",
     "portable/organization.js": "7f9b845142269f6059285df3acb21718f833999888a08475eadd974d5e537be6",
-    "portable/overall-plan.js": "46bd767240c6942d4f045c7de44a4f720989fb0c8fb191e52658a2d5a61fcbc7",
-    "portable/plot.js": "efc5195f491f4b8b0c70f668f73d287f36c7d35f3d4c8db76060d4b6dd57483e",
-    "portable/requirements.js": "94f35f71ffecb37977ba05654dcd5bc13f6e3032147cba099798929a568e4cfc",
-    "portable/runtime.js": "62d8cba753e0aac44f77e4e408eb32b29b38edff5540a65eea0774c0045f8f2b",
+    "portable/overall-plan.js": "8df9b0cc604a737ebe04af11026c21aede028a18c99170dfa2032c0760567fc7",
+    "portable/plot.js": "a5df617d52d35ae333a54c52530c5c58d7be29455353fa7af9439396785261c1",
+    "portable/requirements.js": "b09799d467bc0a69efff67950c7f3ed88b4b1c5091dbad22386443a2adc0116d",
+    "portable/runtime.js": "1ed6e3dd8bfb8f867936a7238f66724fafcdb2e56909e5d3cafd07865a037acd",
     "portable/specifications.js": "0202bc8c3e0cf2518c3a12c6fdbc04d95c3fd6731162e33f24b316974b5911d0",
-    "portable/workspace-exports.js": "c23699ff065eea91693ad1a9ad7b05a1d4f9e7356e04c9b4b085c21f6b06eba0",
+    "portable/theme.css": "45a3b84e408d706a006764b5a763d67f00f93de33362bc6e4c3cee5292c95707",
+    "portable/theme.js": "c51c307af06174708288c89fab72e3b3e01f0c86ffec58e50da78762d66b34b5",
+    "portable/workspace-exports.js": "e3a2f018db7c65e4f1fd023a77c07ee33c26d4434fe739c0bf67d25c7fbe15a1",
     "portable/workspace-tools.js": "03032cb8250d9e49048e84c3c8c0bb26fedc03f7f4857263f2b29edc939e93dd",
-    "portable/workspace.css": "0a0ca876683738f8950b544042fd67713a828429c8239b3a3105396b6c9728a7",
-    "portable/workspace.html": "e2cf59c1186c2d78d8a20e04f4f9bff7c4f9402e50a8cbddd55890794d05b4a4",
-    "portable/workspace.js": "f34efa036597f6b8eeb0863701b31a468657020172df2452a35cc90bdf73df7a",
+    "portable/workspace.css": "9489ccac0919cf76a77065c19c6cab323c3bc1b2e07dc947e0d08307a4f573ff",
+    "portable/workspace.html": "36fd75537a26e03d8e4ca733e52f697ab77d7a43a3fd53580038d6b3be8ff9a1",
+    "portable/workspace.js": "5e00c9e84ee8387de0ba6194705b3f178c23d9ef5c0f64aae456027c38e9f66d",
     "portable/zoom.css": "005439b7f5fcfb595a8e72ae2465ee363e32fe3cdfc4bceb03c1e2ccbc9095f1",
     "portable/zoom.js": "80b6ca7c858dee822459c900dd25fe96af165291f0d46355a0935d099dce92ee"
   },
-  "version": "1.0.2"
+  "version": "1.0.3"
 }
