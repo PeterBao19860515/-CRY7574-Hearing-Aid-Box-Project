@@ -1,0 +1,41 @@
+/* Session-only, bounded document cover previews. Originals and workspace backups are untouched. */
+(function(){'use strict';
+const VERSION='1',MAX_CACHE=24,MAX_BYTES=8*1024*1024;
+function dimensions(bytes,mime){const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);if(mime==='image/png'){if(bytes.length<24||v.getUint32(0)!==0x89504e47||v.getUint32(4)!==0x0d0a1a0a)throw Error('Invalid embedded PNG');return [v.getUint32(16),v.getUint32(20)];}if(bytes[0]!==255||bytes[1]!==216)throw Error('Invalid embedded JPEG');let p=2;while(p+4<bytes.length){if(bytes[p++]!==255)continue;let marker=bytes[p++];while(marker===255)marker=bytes[p++];if(marker===217||marker===218)break;if(marker===1||marker>=208&&marker<=215)continue;const size=v.getUint16(p);if(size<2||p+size>bytes.length)break;if([192,193,194,195,197,198,199,201,202,203,205,206,207].includes(marker))return [v.getUint16(p+5),v.getUint16(p+3)];p+=size;}throw Error('Embedded JPEG dimensions unavailable');}
+async function imageCover(blob, embedded = false) {
+  const maxBytes = (embedded ? 2 : 20) * 1024 * 1024;
+  if (!(blob instanceof Blob) || !blob.size || blob.size > maxBytes) throw Error('Image exceeds preview size limit');
+  const [width, height] = dimensions(new Uint8Array(await blob.arrayBuffer()), blob.type);
+  const maxPixels = embedded ? 16000000 : 64000000;
+  if (!width || !height || width > 16384 || height > 16384 || width * height > maxPixels ||
+      (embedded && (width > 8192 || height > 8192))) throw Error('Image dimensions exceed preview limits');
+  const image = await createImageBitmap(blob);
+  try {
+    const scale = Math.min(420 / image.width, 280 / image.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', .82);
+    canvas.width = 1;
+    canvas.height = 1;
+    return embedded
+      ? { dataUrl, label: 'Embedded cover', message: 'Office-provided embedded thumbnail; it is not verified as the current first page.' }
+      : { dataUrl, label: 'JPEG image' };
+  } finally {
+    image.close();
+  }
+}
+async function htmlCover(blob){const source=new TextDecoder('utf-8',{fatal:true}).decode(await blob.slice(0,512*1024).arrayBuffer()),template=document.createElement('template');template.innerHTML=source;for(const node of template.content.querySelectorAll('script,style,noscript,template,iframe,object,embed,svg,math,head,title,link,meta,base,[hidden],[aria-hidden="true"],input,textarea,select,button'))node.remove();for(const node of template.content.querySelectorAll('[style]'))if(/(?:display\s*:\s*none|visibility\s*:\s*hidden)/i.test(node.getAttribute('style')))node.remove();const text=template.content.textContent.replace(/\s+/gu,' ').trim().slice(0,1800);if(!text)return {label:'Text preview unavailable',message:'No visible text found. HTML scripts and resources are never loaded.'};const canvas=document.createElement('canvas');canvas.width=420;canvas.height=280;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,420,280);ctx.fillStyle='#292236';ctx.font='15px system-ui';ctx.textBaseline='top';let line='',y=18;for(const char of text){if(ctx.measureText(line+char).width>382){ctx.fillText(line,18,y);line='';y+=23;if(y>250)break;}line+=char;}if(y<=250)ctx.fillText(line,18,y);const dataUrl=canvas.toDataURL('image/jpeg',.82);canvas.width=1;canvas.height=1;return {dataUrl,label:'Text preview',message:'HTML text only; not a rendered first-page screenshot. Layout, images, scripts and external resources are excluded.'};}
+function mount({request,getRecords}){const cache=new Map(),queued=new Set();let queue=[],working=false,observed=new Map(),generation=0;const key=item=>JSON.stringify([item.id,item.sha256,VERSION]),isCurrent=item=>(getRecords()||[]).some(r=>r.id===item.id&&r.sha256===item.sha256),observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){observer.unobserve(entry.target);const item=observed.get(entry.target);if(item)enqueue(item,entry.target);}}, {rootMargin:'200px'});
+ function paint(node,result){if(!node.isConnected)return;node.replaceChildren();node.dataset.thumbnailState=result.dataUrl?'ready':'unavailable';if(result.dataUrl){const image=document.createElement('img');image.src=result.dataUrl;image.alt=result.label;image.width=420;image.height=280;node.append(image);}else{const placeholder=document.createElement('span');placeholder.className='requirement-thumbnail-placeholder';placeholder.textContent='Preview unavailable';node.append(placeholder);}const caption=document.createElement('small');caption.textContent=result.label||'Preview unavailable';caption.title=result.message||'';node.title=result.message||'';node.append(caption);}
+ function prune(){const current=new Set((getRecords()||[]).map(key));for(const k of cache.keys())if(!current.has(k))cache.delete(k);queue=queue.filter(entry=>{if(current.has(entry.key))return true;queued.delete(entry.key);return false;});let size=[...cache.values()].reduce((n,r)=>n+(r.dataUrl?.length||0),0);while(cache.size>MAX_CACHE||size>MAX_BYTES){const [k,r]=cache.entries().next().value;size-=r.dataUrl?.length||0;cache.delete(k);}}
+ function enqueue(item,node){const k=key(item);if(cache.has(k)){paint(node,cache.get(k));return;}if(!queued.has(k)){queued.add(k);queue.push({key:k,item:{...item},generation});}run();}
+ async function run(){if(working)return;working=true;try{while(queue.length){const job=queue.shift();try{if(!isCurrent(job.item)||![...observed].some(([node,item])=>node.isConnected&&key(item)===job.key))continue;const ext=job.item.name.split('.').at(-1).toLowerCase();let result;if(['docx','pptx'].includes(ext)){const cover=await request('/api/requirements/'+job.item.id+'/embedded-cover');if(cover&&cover.sourceSha256!==job.item.sha256)throw Error('Document changed; cover was not shown.');result=cover?await imageCover(cover.blob, true):{label:'No embedded cover',message:'This Office file has no supported embedded JPEG/PNG cover. Download it to view the first page.'};}else if(['pdf','html','htm','jpg','jpeg'].includes(ext)){const blob=await request('/api/requirements/'+job.item.id+'/content');if(!(blob instanceof Blob)||blob.size!==job.item.size)throw Error('Original document size mismatch');const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer()))].map(b=>b.toString(16).padStart(2,'0')).join('');if(hash!==job.item.sha256)throw Error('Original document integrity mismatch');if(!isCurrent(job.item)||generation!==job.generation)continue;result=ext==='pdf'?await DocumentIndex.renderFirstPage(blob):blob.type==='image/jpeg'?await imageCover(blob):await htmlCover(blob);}else result={label:'No cover available',message:'Legacy DOC/PPT cover rendering is unsupported. Download the original document.'};if(isCurrent(job.item)&&generation===job.generation){cache.set(job.key,result);prune();for(const [node,item]of observed)if(key(item)===job.key&&node.isConnected)paint(node,result);}}catch(error){if(isCurrent(job.item)&&generation===job.generation){const result={label:'Preview unavailable',message:String(error.message||error)};cache.set(job.key,result);prune();for(const [node,item]of observed)if(key(item)===job.key&&node.isConnected)paint(node,result);}}finally{queued.delete(job.key);}}}finally{working=false;}}
+ function render(){prune();observer.disconnect();observed=new Map();for(const node of document.querySelectorAll('[data-requirement-thumbnail]')){const item=(getRecords()||[]).find(r=>r.id===node.dataset.requirementThumbnail);if(!item)continue;observed.set(node,item);const hit=cache.get(key(item));if(hit)paint(node,hit);else{node.dataset.thumbnailState='pending';node.textContent='Loading cover preview…';observer.observe(node);}}}
+ window.addEventListener('pagehide',()=>{generation++;observer.disconnect();cache.clear();queue=[];queued.clear();observed.clear();});return {render,limits:{cacheEntries:MAX_CACHE,cacheBytes:MAX_BYTES,concurrency:1},version:VERSION};}
+window.RequirementThumbnails={mount};
+})();

@@ -33,7 +33,7 @@ def empty_workspace():
         }],
         **{key: [] for key in (
             'charts', 'sources', 'tasks', 'reports', 'activity', 'groups',
-            'comparisons', 'environmentMedia', 'specifications', 'scheduleCards', 'requirements', 'planItems', 'translations',
+            'comparisons', 'environmentMedia', 'specifications', 'scheduleCards', 'requirements', 'testNotes', 'planItems', 'planSources', 'importTemplates', 'translations',
         )},
     }
 
@@ -78,7 +78,7 @@ def main():
     }
     scripts += '<script type="application/json" id="document-index-assets">' + json.dumps(pdf_assets, separators=(',', ':')).replace('<', '\\u003c') + '</script>'
 
-    for name in ['theme.js', 'display.js', 'appearance.js', 'limits.js', 'document-index.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'requirements.js', 'overall-plan.js', 'i18n.js', 'bilingual.js', 'workspace.js', 'mcp-bridge.js']:
+    for name in ['theme.js', 'display.js', 'appearance.js', 'limits.js', 'document-index.js', 'gantt-import.js', 'import-mapping.js', 'test-note-rich-text.js', 'runtime.js', 'axis-ticks.js', 'axis-inputs.js', 'plot.js', 'multi-panel.js', 'workspace-tools.js', 'workspace-exports.js', 'comparisons.js', 'environment-media.js', 'specifications.js', 'requirement-thumbnails.js', 'requirements.js', 'overall-plan.js', 'i18n.js', 'bilingual.js', 'interface-controls.js', 'upload-mapping.js', 'test-notes.js', 'workspace.js', 'mcp-bridge.js']:
         scripts += '<script>' + inline((ROOT / 'portable' / name).read_text(encoding='utf-8')) + '</script>'
     html = html.replace('<!--WORKSPACE_SCRIPTS-->', scripts)
     output = args.output.expanduser() if args.output else ROOT / NAME
