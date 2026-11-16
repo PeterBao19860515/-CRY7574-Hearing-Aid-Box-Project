@@ -1,6 +1,6 @@
 /* Selection exports preserve saved numeric samples; display precision is view-only. */
 (function(){'use strict';
-const APP='CRY7574 Hearing Aid Box Measurement Manage Software';
+const APP = document.querySelector('meta[name="app-name"]')?.content || document.title;
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
 function csvCell(value,numeric=false){let text=value==null?'':String(value);if(!numeric&&/^\s*[=+@-]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"';}
 function normalized(chart,state){const source=state.sources.find(s=>s.id===chart.sourceId);return {title:chart.title,unit:chart.unit,...(chart.processing==='derived-isolation'?{processing:'derived-isolation',calculation:{formula:'Ch2 - Ch1',outputUnit:'dB',frequencyPolicy:'exact-matching-unique-grid'}}:{}),testDate:chart.testDate||'',testItem:chart.testItem||'',notes:chart.notes||'',tags:[...(chart.tags||[])],series:chart.series.map(s=>({name:s.name,values:s.values,...(s.reference===undefined?{}:{reference:s.reference}),...(s.style?{style:{...s.style}}:{})})),libraryName:state.libraries.find(l=>l.id===chart.libraryId)?.name||'',sourceTrace:{name:chart.sourceName||source?.name||'',sha256:source?.sha256||'',classification:chart.kind,sourceUnit:chart.sourceUnit||chart.unit,processing:chart.processing||''}};}

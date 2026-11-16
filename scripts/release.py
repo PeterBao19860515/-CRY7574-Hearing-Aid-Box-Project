@@ -11,6 +11,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = 'release-manifest.json'
 DIST = 'dist/CRY7574 Hearing Aid Box Measurement Manage Software.html'
+HEADPHONE_BRANCH = '【标准产品】耳机AI听音标准解决方案产品'
+HEADPHONE_INITIAL_BASE = 'headphone-initial'
 PATTERN = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)')
 
 
@@ -27,12 +29,19 @@ def version(raw):
 
 def default_base():
     result = git('rev-parse', '--verify', '@{upstream}', check=False)
-    if result.returncode:
-        raise ValueError('No upstream configured. Fetch first, then pass --base <remote-commit>.')
-    return result.stdout.decode().strip()
+    if not result.returncode:
+        return result.stdout.decode().strip()
+    branch = git('symbolic-ref', '--short', 'HEAD', check=False).stdout.decode().strip()
+    if branch == HEADPHONE_BRANCH:
+        result = git('rev-parse', '--verify', 'refs/remotes/origin/' + branch, check=False)
+        return result.stdout.decode().strip() if not result.returncode else HEADPHONE_INITIAL_BASE
+    raise ValueError('No upstream configured. Fetch first, then pass --base <remote-commit>.')
 
 
 def baseline(ref):
+    if ref == HEADPHONE_INITIAL_BASE:
+        # The independent headphone app shipped at V1.0.0 before its first GitHub push.
+        return '1.0.0'
     git('rev-parse', '--verify', ref + '^{commit}')
     result = git('show', ref + ':VERSION', check=False)
     # The pre-versioning repository is explicitly treated as 1.0.0.
@@ -114,7 +123,12 @@ def pre_push():
         local_ref, local_sha, remote_ref, remote_sha = fields
         if set(local_sha) == {'0'} or not remote_ref.startswith('refs/heads/'):
             continue
-        base = default_base() if set(remote_sha) == {'0'} else remote_sha
+        if set(remote_sha) != {'0'}:
+            base = remote_sha
+        elif remote_ref == 'refs/heads/' + HEADPHONE_BRANCH:
+            base = HEADPHONE_INITIAL_BASE
+        else:
+            base = default_base()
         value = verify(base, local_sha)
         print(f'CRY7574 release guard: V{value} verified for {remote_ref}', file=sys.stderr)
 

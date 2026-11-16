@@ -4,10 +4,14 @@ from pathlib import Path
 import argparse
 import base64
 import json
+from html import escape
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
+# Keep the existing HTML path so the browser can reopen the same local workspace.
 NAME = 'CRY7574 Hearing Aid Box Measurement Manage Software.html'
+APP_NAME = '【标准产品】耳机AI听音标准解决方案产品数据分析平台'
+DEFAULT_LANGUAGE = 'zh'
 
 
 def product_version():
@@ -22,8 +26,8 @@ def empty_workspace():
     """A public release starts with one destination library and no user records."""
     return {
         'version': 1,
-        'appName': 'CRY7574 Hearing Aid Box Measurement Manage Software',
-        'settings': {'decimalPlaces': 'auto', 'uiLanguage': 'en'},
+        'appName': APP_NAME,
+        'settings': {'decimalPlaces': 'auto', 'uiLanguage': DEFAULT_LANGUAGE},
         'libraries': [{
             'id': 'library-imports',
             'name': 'Measurements',
@@ -55,9 +59,14 @@ def main():
     else:
         seed = json.loads(seed_path.read_text(encoding='utf-8'))
         mode = 'private seed snapshot'
+    seed["appName"] = APP_NAME
+    seed.setdefault("settings", {"decimalPlaces": "auto"})["uiLanguage"] = DEFAULT_LANGUAGE
     seed_json = json.dumps(seed, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c').replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
     html = (ROOT / 'portable/workspace.html').read_text(encoding='utf-8')
     html = html.replace('__APP_VERSION__', version)
+    html = html.replace('__APP_NAME__', escape(APP_NAME, quote=True))
+    html = html.replace('__DEFAULT_LANGUAGE__', DEFAULT_LANGUAGE)
+    html = html.replace('__HTML_LANG__', 'zh-CN' if DEFAULT_LANGUAGE == 'zh' else 'en')
     logo = (ROOT / 'portable/assets/crysound-logo.png').read_bytes()
     html = html.replace('__CRYSOUND_LOGO__', 'data:image/png;base64,' + base64.b64encode(logo).decode('ascii'))
     html = html.replace('<!--WORKSPACE_STYLE-->', '<style>' + '\n'.join((ROOT / 'portable' / name).read_text(encoding='utf-8') for name in ['workspace.css', 'theme.css']) + '</style>')

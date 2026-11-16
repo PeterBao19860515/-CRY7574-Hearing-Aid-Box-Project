@@ -43,7 +43,7 @@ Task edits require `expectedRevision` from `list_tasks`. Planned requires 0% and
 
 Each project/work-group card contains multiple original tasks. Its rows show **Task**, **Current Status**, **Progress** and **DRI**. `owner` remains the DRI field for compatibility; optional `statusDetail` holds the descriptive Current Status text, while `status` keeps its Planned/In progress/Blocked/Complete workflow meaning. Numeric progress remains unchanged. `cardId` links a task to an existing card; blank means the virtual Ungrouped tasks collection. Card metadata edits use revisions. A card must be empty before requesting its guarded deletion; task data never cascades away when a card is deleted. Old workspaces/backups without cards retain their tasks as ungrouped. Lists and backup data share the same browser entities.
 
-Deletion tools **open the existing browser confirmation only** and return `confirmationRequired: true`, `deleted: false`. The user must review the affected scope, explicitly confirm, and enter `CRYSOUND` in the browser. MCP arguments never accept a password. A later query can confirm whether deletion occurred. Do not treat opening a dialog as completed deletion. Pending edits/other dialogs must be closed before requesting a new deletion.
+Deletion tools **open the existing browser confirmation only** and return `confirmationRequired: true`, `deleted: false`. The user must review and confirm the affected scope in the browser. Library and task deletion also require `CRYSOUND`. MCP arguments never accept a password. A later query can confirm whether deletion occurred. Do not treat opening a dialog as completed deletion. Pending edits/other dialogs must be closed before requesting a new deletion.
 
 ## Local connection and lifecycle
 
