@@ -44,6 +44,50 @@ def next_version(ref):
     return f'{major}.{minor}.{patch + 1}'
 
 
+def committed_release_versions(base, commit):
+    """Return VERSION values introduced between a remote base and a candidate.
+
+    A maintained feature branch can legitimately contain several prepared
+    patch releases before it is first fast-forwarded into an older main
+    branch.  Inspect those version-bearing commits in chronological order so
+    the guard can distinguish that case from a skipped version number.
+    """
+    result = git('rev-list', '--reverse', f'{base}..{commit}', '--', 'VERSION', check=False)
+    if result.returncode:
+        return []
+    versions = []
+    for revision in result.stdout.decode().splitlines():
+        raw = git('show', f'{revision}:VERSION', check=False)
+        if raw.returncode:
+            continue
+        value = version(raw.stdout)
+        if not versions or versions[-1] != value:
+            versions.append(value)
+    return versions
+
+
+def expected_candidate_version(base, commit=None):
+    expected = next_version(base)
+    if not commit:
+        return expected
+
+    versions = committed_release_versions(base, commit)
+    if not versions:
+        return expected
+    previous = baseline(base)
+    for value in versions:
+        next_value = next_version_from_value(previous)
+        if value != next_value:
+            return expected
+        previous = value
+    return versions[-1]
+
+
+def next_version_from_value(value):
+    major, minor, patch = map(int, value.split('.'))
+    return f'{major}.{minor}.{patch + 1}'
+
+
 def input_path(name):
     if name == 'VERSION':
         return True
@@ -80,7 +124,7 @@ def make_manifest(reader):
 
 def verify(base, commit=None):
     reader = Reader(commit)
-    actual, expected = version(reader.read('VERSION')), next_version(base)
+    actual, expected = version(reader.read('VERSION')), expected_candidate_version(base, commit)
     if actual != expected:
         raise ValueError(f'Push requires V{expected}; found V{actual}. Run release.py prepare after fetching.')
     recorded = json.loads(reader.read(MANIFEST))
